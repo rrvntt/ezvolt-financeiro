@@ -211,6 +211,22 @@ tbody td{padding:.5rem .75rem;color:var(--text);vertical-align:middle}
 .month-bar{flex:1;border-radius:3px 3px 0 0;min-height:2px;transition:height .4s}
 .month-label{font-size:.65rem;color:var(--text3);text-align:center}
 
+/* ===== FLUXO DE CAIXA ===== */
+.fluxo-table{width:100%;border-collapse:collapse;font-size:.78rem;min-width:900px}
+.fluxo-table th{background:var(--bg3);color:var(--text3);font-weight:600;padding:.5rem .75rem;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0}
+.fluxo-table th:first-child{text-align:left;position:sticky;left:0;z-index:2;background:var(--bg3)}
+.fluxo-table td{padding:.45rem .75rem;border-bottom:1px solid rgba(30,61,53,.4);text-align:right;white-space:nowrap}
+.fluxo-table td:first-child{text-align:left;position:sticky;left:0;background:var(--card);z-index:1}
+.fluxo-group td{background:var(--bg3)!important;font-weight:700;color:var(--text);border-top:1px solid var(--border2)}
+.fluxo-group td:first-child{background:var(--bg3)!important}
+.fluxo-total td{background:var(--bg2)!important;font-weight:700;font-size:.82rem;border-top:2px solid var(--border2)}
+.fluxo-total td:first-child{background:var(--bg2)!important}
+.fluxo-saldo td{background:rgba(21,194,107,.07)!important;font-weight:700;border-top:2px solid var(--volt)}
+.fluxo-saldo td:first-child{background:rgba(21,194,107,.07)!important;color:var(--volt)}
+.fluxo-drag-handle{cursor:grab;color:var(--text3);margin-right:.5rem;font-size:.85rem}
+.fluxo-drag-handle:active{cursor:grabbing}
+.fluxo-edit-row{background:var(--bg3);padding:.5rem;border-radius:6px;margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem}
+
 /* ===== PRINT ===== */
 @media print{
   .app-header,.stepper,.no-print,.settings-overlay{display:none!important}
@@ -286,6 +302,11 @@ tbody td{padding:.5rem .75rem;color:var(--text);vertical-align:middle}
     <div class="step" id="step3" onclick="goPage(3)">
       <div class="step-num">3</div>
       <span>Dashboard</span>
+    </div>
+    <div class="step-sep">›</div>
+    <div class="step" id="step4" onclick="goPage(4)">
+      <div class="step-num">4</div>
+      <span>Fluxo de Caixa</span>
     </div>
   </div>
 </div>
@@ -506,6 +527,39 @@ tbody td{padding:.5rem .75rem;color:var(--text);vertical-align:middle}
   </div>
 </div>
 
+<!-- ===== PAGE 4: FLUXO DE CAIXA ===== -->
+<div class="page" id="page4">
+  <div class="flex items-center justify-between mb-3 no-print">
+    <div>
+      <div class="section-title" style="margin:0">Fluxo de Caixa</div>
+      <div class="text-sm text-muted">Visão mensal consolidada por grupo DRE</div>
+    </div>
+    <div class="flex gap-1 items-center">
+      <button class="btn btn-secondary btn-sm no-print" onclick="openFluxoConfig()">⚙ Personalizar Linhas</button>
+      <button class="btn btn-secondary btn-sm no-print" onclick="exportPDF()">🖨 PDF</button>
+    </div>
+  </div>
+
+  <!-- Saldo Inicial das Contas -->
+  <div class="card mb-3" id="cardSaldoInicial">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Saldo Inicial das Contas</div>
+        <div class="card-subtitle">Configure o saldo no início do exercício para o cálculo de disponível</div>
+      </div>
+      <button class="btn btn-secondary btn-sm no-print" onclick="openContasRapido()">✎ Editar Saldos</button>
+    </div>
+    <div id="saldoInicialResumo"></div>
+  </div>
+
+  <!-- Tabela Fluxo -->
+  <div class="card">
+    <div class="table-wrap" id="fluxoTableWrap">
+      <div id="fluxoTabela"></div>
+    </div>
+  </div>
+</div>
+
 </div><!-- end .main -->
 
 <!-- ===== SETTINGS PANEL ===== -->
@@ -583,17 +637,44 @@ const LINHAS_NEGOCIO = ['Recarga B2C','Recarga B2B','E-BUS','Chargers as a Servi
 const TIPOS_MOVIMENTO = ['receita','despesa','transferencia'];
 
 let state = {
-  lancamentos: [],      // all transactions
-  memoria: {},          // learning memory
-  regras: [],           // keyword rules
-  fixos: [],            // recurring entries
+  lancamentos: [],
+  memoria: {},
+  regras: [],
+  fixos: [],
   contas: [
     {id:'bradesco',nome:'Banco Bradesco',tipo:'Conta Corrente',saldo_inicial:0,data_inicio:'',ativo:true},
     {id:'xp',nome:'XP Investimentos',tipo:'Conta Investimento',saldo_inicial:0,data_inicio:'',ativo:true},
     {id:'aplicacoes',nome:'Aplicações',tipo:'Aplicação Financeira',saldo_inicial:0,data_inicio:'',ativo:true},
   ],
   showSomentePendentes: false,
+  fluxoLinhas: [], // customizable cash flow rows
 };
+
+// Default fluxo structure based on DRE accounts
+const FLUXO_DEFAULT = [
+  {id:'fi1', tipo:'separador', label:'ENTRADAS', cor:'volt'},
+  {id:'fi2', tipo:'dre', label:'Receita Bruta de Vendas', conta_dre:'Receita Bruta de Vendas', movimento:'receita'},
+  {id:'fi3', tipo:'dre', label:'Outras Receitas', conta_dre:'Outras Receitas', movimento:'receita'},
+  {id:'fi4', tipo:'dre', label:'Receitas Financeiras', conta_dre:'Receitas Financeiras', movimento:'receita'},
+  {id:'fi5', tipo:'dre', label:'Recuperação de Despesas', conta_dre:'Recuperação de Despesas Variáveis', movimento:'receita'},
+  {id:'fi6', tipo:'total', label:'Total Entradas', refs:['fi2','fi3','fi4','fi5'], cor:'volt'},
+  {id:'fi7', tipo:'separador', label:'SAÍDAS', cor:'red'},
+  {id:'fi8', tipo:'dre', label:'Custo dos Serviços Prestados', conta_dre:'Custo dos Serviços Prestados', movimento:'despesa'},
+  {id:'fi9', tipo:'dre', label:'Despesas com Pessoal', conta_dre:'Despesas com Pessoal', movimento:'despesa'},
+  {id:'fi10', tipo:'dre', label:'Despesas Administrativas', conta_dre:'Despesas Administrativas', movimento:'despesa'},
+  {id:'fi11', tipo:'dre', label:'Despesas de Vendas e Marketing', conta_dre:'Despesas de Vendas e Marketing', movimento:'despesa'},
+  {id:'fi12', tipo:'dre', label:'Despesas Financeiras', conta_dre:'Despesas Financeiras', movimento:'despesa'},
+  {id:'fi13', tipo:'dre', label:'Outros Custos', conta_dre:'Outros Custos', movimento:'despesa'},
+  {id:'fi14', tipo:'dre', label:'Outros Tributos', conta_dre:'Outros Tributos', movimento:'despesa'},
+  {id:'fi15', tipo:'dre', label:'Deduções de Receita', conta_dre:'Deduções de Receita', movimento:'despesa'},
+  {id:'fi16', tipo:'dre', label:'Despesas Variáveis', conta_dre:'Despesas Variáveis', movimento:'despesa'},
+  {id:'fi17', tipo:'dre', label:'CAPEX / Ativos', conta_dre:'Ativos', movimento:'despesa'},
+  {id:'fi18', tipo:'total', label:'Total Saídas', refs:['fi8','fi9','fi10','fi11','fi12','fi13','fi14','fi15','fi16','fi17'], cor:'red'},
+  {id:'fi19', tipo:'resultado', label:'Resultado do Mês', cor:'auto'},
+  {id:'fi20', tipo:'separador', label:'AJUSTE DE TRANSFERÊNCIAS', cor:'blue'},
+  {id:'fi21', tipo:'transferencia', label:'Transferências (líquido)', cor:'blue'},
+  {id:'fi22', tipo:'saldo', label:'Disponível (Saldo Final)', cor:'volt'},
+];
 
 // ============================================================
 // PERSISTENCE
@@ -1573,6 +1654,7 @@ function goPage(n){
   });
   if(n===2){populateFiltroMes();renderClassifTable();}
   if(n===3){updatePeriodSelector();renderDashboard();}
+  if(n===4){renderFluxoCaixa();renderSaldoInicialResumo();}
 }
 
 function updateStepDone(){
@@ -1793,6 +1875,372 @@ function showToast(msg, type='success'){
   setTimeout(()=>t.remove(),3500);
 }
 
+
+// ============================================================
+// FLUXO DE CAIXA
+// ============================================================
+
+function getFluxoLinhas(){
+  if(!state.fluxoLinhas||!state.fluxoLinhas.length){
+    state.fluxoLinhas=JSON.parse(JSON.stringify(FLUXO_DEFAULT));
+  }
+  return state.fluxoLinhas;
+}
+
+function calcFluxoCell(linha, mesData, allLancs){
+  if(linha.tipo==='separador'||linha.tipo==='total'||linha.tipo==='resultado'||linha.tipo==='saldo'||linha.tipo==='transferencia') return null;
+  const mov = linha.movimento||'despesa';
+  const dre = linha.conta_dre||'';
+  return allLancs.filter(l=>
+    l.tipo_mov===mov &&
+    l.conta_dre===dre &&
+    (mesData===null || l.mes_ano===mesData)
+  ).reduce((s,l)=>s+l.valor,0);
+}
+
+function calcTotal(refs, valMap){
+  return refs.reduce((s,r)=>s+(valMap[r]||0),0);
+}
+
+function renderFluxoCaixa(){
+  const linhas = getFluxoLinhas();
+  const lancs = state.lancamentos.filter(l=>l.tipo_mov!=='transferencia'||l.tipo_mov==='transferencia');
+  
+  // Get all months sorted
+  const meses = [...new Set(state.lancamentos.map(l=>l.mes_ano).filter(Boolean))].sort();
+  
+  if(!meses.length){
+    document.getElementById('fluxoTabela').innerHTML=`
+      <div style="text-align:center;padding:3rem;color:var(--text3)">
+        <div style="font-size:2rem;margin-bottom:.5rem">📊</div>
+        Nenhum dado disponível. Importe e classifique lançamentos primeiro.
+      </div>`;
+    return;
+  }
+
+  // Pre-compute values per linha per month + total
+  const vals = {}; // vals[linhaId][mesAno|'total'] = number
+  
+  linhas.forEach(l=>{
+    vals[l.id]={};
+    if(l.tipo==='dre'){
+      let tot=0;
+      meses.forEach(m=>{
+        const v=calcFluxoCell(l,m,state.lancamentos);
+        vals[l.id][m]=v||0;
+        tot+=v||0;
+      });
+      vals[l.id]['total']=tot;
+    }
+  });
+  
+  // Compute totals and results
+  linhas.forEach(l=>{
+    if(l.tipo==='total'){
+      vals[l.id]={};
+      let tot=0;
+      meses.forEach(m=>{
+        const v=calcTotal(l.refs||[],Object.fromEntries(Object.entries(vals).map(([k,mv])=>[k,mv[m]||0])));
+        vals[l.id][m]=v;
+        tot+=v;
+      });
+      vals[l.id]['total']=tot;
+    }
+  });
+
+  // Find total entradas and total saidas ids
+  const entId = linhas.find(l=>l.tipo==='total'&&(l.label||'').toLowerCase().includes('entrad'))?.id;
+  const saidId = linhas.find(l=>l.tipo==='total'&&(l.label||'').toLowerCase().includes('saíd')||((l.label||'').toLowerCase().includes('said')))?.id;
+
+  // Resultado = Entradas - Saidas
+  linhas.forEach(l=>{
+    if(l.tipo==='resultado'){
+      vals[l.id]={};
+      let tot=0;
+      meses.forEach(m=>{
+        const ent=entId?(vals[entId]?.[m]||0):0;
+        const sai=saidId?(vals[saidId]?.[m]||0):0;
+        const v=ent-sai;
+        vals[l.id][m]=v;
+        tot+=v;
+      });
+      vals[l.id]['total']=tot;
+    }
+  });
+
+  // Transferencias liquidas
+  linhas.forEach(l=>{
+    if(l.tipo==='transferencia'){
+      vals[l.id]={};
+      let tot=0;
+      meses.forEach(m=>{
+        const tRec=state.lancamentos.filter(x=>x.tipo_mov==='transferencia'&&x.mes_ano===m&&x.conta_destino==='bradesco').reduce((s,x)=>s+x.valor,0);
+        const tEnv=state.lancamentos.filter(x=>x.tipo_mov==='transferencia'&&x.mes_ano===m&&x.conta_origem==='bradesco').reduce((s,x)=>s+x.valor,0);
+        const v=tRec-tEnv;
+        vals[l.id][m]=v;
+        tot+=v;
+      });
+      vals[l.id]['total']=tot;
+    }
+  });
+
+  // Saldo final = saldo inicial conta + resultado + transferencias
+  const resFinalId = linhas.find(l=>l.tipo==='resultado')?.id;
+  const transfId = linhas.find(l=>l.tipo==='transferencia')?.id;
+  
+  linhas.forEach(l=>{
+    if(l.tipo==='saldo'){
+      vals[l.id]={};
+      // Start from total initial balance
+      const totalSaldoInicial = state.contas.filter(c=>c.ativo).reduce((s,c)=>s+(parseBRNumber(c.saldo_inicial)||0),0);
+      let acumulado=totalSaldoInicial;
+      meses.forEach(m=>{
+        const res=resFinalId?(vals[resFinalId]?.[m]||0):0;
+        const transf=transfId?(vals[transfId]?.[m]||0):0;
+        acumulado+=res+transf;
+        vals[l.id][m]=acumulado;
+      });
+      vals[l.id]['total']=acumulado;
+    }
+  });
+
+  // Build HTML table
+  let thead=`<thead><tr>
+    <th style="min-width:220px;text-align:left">Linha</th>
+    ${meses.map(m=>{
+      const [mo,yr]=m.split('/');
+      const lbl=new Date(yr,mo-1,1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+      return `<th style="min-width:110px">${lbl}</th>`;
+    }).join('')}
+    <th style="min-width:120px">Total</th>
+  </tr></thead>`;
+
+  let tbody='<tbody>';
+  linhas.forEach(l=>{
+    let rowCls='';
+    if(l.tipo==='separador') rowCls='fluxo-group';
+    else if(l.tipo==='total') rowCls='fluxo-group';
+    else if(l.tipo==='saldo') rowCls='fluxo-saldo';
+    else if(l.tipo==='resultado') rowCls='fluxo-group';
+
+    if(l.tipo==='separador'){
+      const cor=l.cor==='volt'?'var(--volt)':l.cor==='red'?'var(--red)':l.cor==='blue'?'var(--blue)':'var(--text2)';
+      tbody+=`<tr class="${rowCls}">
+        <td colspan="${meses.length+2}" style="color:${cor};font-size:.72rem;letter-spacing:.06em;padding:.4rem .75rem">${l.label}</td>
+      </tr>`;
+      return;
+    }
+
+    const colVals = meses.map(m=>{
+      const v=vals[l.id]?.[m]??null;
+      if(v===null) return '<td></td>';
+      const isNeg=v<0;
+      const isPos=v>0;
+      let color='';
+      if(l.tipo==='resultado'||l.tipo==='saldo'){
+        color=v>=0?'color:var(--volt)':'color:var(--red)';
+      } else if(l.tipo==='total'){
+        color=l.cor==='volt'?'color:var(--volt)':l.cor==='red'?'color:var(--red)':'';
+      } else if(l.tipo==='dre'){
+        color=l.movimento==='receita'?'color:var(--volt)':'color:var(--red)';
+      } else if(l.tipo==='transferencia'){
+        color=v>=0?'color:var(--volt)':'color:var(--red)';
+      }
+      return `<td style="font-family:monospace;font-size:.75rem;${color}">${fmtBRL(v)}</td>`;
+    }).join('');
+
+    const totVal=vals[l.id]?.['total']??null;
+    let totColor='';
+    if(totVal!==null){
+      if(l.tipo==='resultado'||l.tipo==='saldo') totColor=totVal>=0?'color:var(--volt)':'color:var(--red)';
+      else if(l.tipo==='total') totColor=l.cor==='volt'?'color:var(--volt)':l.cor==='red'?'color:var(--red)':'';
+      else if(l.tipo==='dre') totColor=l.movimento==='receita'?'color:var(--volt)':'color:var(--red)';
+    }
+    const totCell=totVal!==null?`<td style="font-family:monospace;font-size:.75rem;font-weight:700;${totColor}">${fmtBRL(totVal)}</td>`:'<td></td>';
+
+    const indent=l.tipo==='dre'?'padding-left:1.25rem':'';
+    tbody+=`<tr class="${rowCls}">
+      <td style="${indent}">${l.label}</td>
+      ${colVals}
+      ${totCell}
+    </tr>`;
+  });
+  tbody+='</tbody>';
+
+  document.getElementById('fluxoTabela').innerHTML=`
+    <div style="overflow-x:auto">
+      <table class="fluxo-table">${thead}${tbody}</table>
+    </div>`;
+}
+
+// ============================================================
+// SALDO INICIAL RESUMO
+// ============================================================
+function renderSaldoInicialResumo(){
+  const contas=state.contas.filter(c=>c.ativo);
+  const total=contas.reduce((s,c)=>s+(parseBRNumber(c.saldo_inicial)||0),0);
+  document.getElementById('saldoInicialResumo').innerHTML=`
+    <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end">
+      ${contas.map(c=>`
+        <div style="background:var(--bg3);border-radius:8px;padding:.75rem 1rem;min-width:160px">
+          <div style="font-size:.7rem;color:var(--text3);margin-bottom:.25rem">${c.nome}</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:var(--volt)">${fmtBRL(parseBRNumber(c.saldo_inicial)||0)}</div>
+          ${c.data_inicio?`<div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">desde ${c.data_inicio}</div>`:''}
+        </div>`).join('')}
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:.75rem 1rem;min-width:160px">
+        <div style="font-size:.7rem;color:var(--text3);margin-bottom:.25rem">TOTAL INICIAL</div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:var(--volt)">${fmtBRL(total)}</div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// CONTAS RAPIDO (quick edit from fluxo page)
+// ============================================================
+function openContasRapido(){
+  const body=`
+    <div id="contasRapidoList">
+      ${state.contas.filter(c=>c.ativo).map((c,i)=>`
+        <div style="background:var(--bg3);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.5rem">${c.nome}</div>
+          <div class="form-row form-row-2" style="gap:.5rem">
+            <div>
+              <label class="form-label">Saldo Inicial (R$)</label>
+              <input class="form-control" type="number" step="0.01" value="${c.saldo_inicial||0}"
+                oninput="updateContaRapido(${state.contas.indexOf(c)},'saldo_inicial',+this.value)">
+            </div>
+            <div>
+              <label class="form-label">Data de Início</label>
+              <input class="form-control" type="date" value="${c.data_inicio||''}"
+                oninput="updateContaRapido(${state.contas.indexOf(c)},'data_inicio',this.value)">
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('modalTitle').textContent='Saldos Iniciais das Contas';
+  document.getElementById('modalBody').innerHTML=body;
+  document.getElementById('modalFooter').innerHTML=`
+    <button class="btn btn-secondary" onclick="closeModal()">Fechar</button>
+    <button class="btn btn-primary" onclick="saveContasRapido()">Salvar</button>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function updateContaRapido(i,f,v){
+  state.contas[i][f]=v;
+}
+
+function saveContasRapido(){
+  saveState();
+  closeModal();
+  renderSaldoInicialResumo();
+  renderFluxoCaixa();
+  showToast('Saldos salvos!','success');
+}
+
+// ============================================================
+// FLUXO CONFIG (customize rows)
+// ============================================================
+function openFluxoConfig(){
+  renderFluxoConfigModal();
+  document.getElementById('modalTitle').textContent='Personalizar Linhas do Fluxo de Caixa';
+  document.getElementById('modalFooter').innerHTML=`
+    <button class="btn btn-danger btn-sm" onclick="resetFluxoDefault()">↺ Restaurar Padrão</button>
+    <button class="btn btn-secondary" onclick="addFluxoLinha()">+ Adicionar Linha</button>
+    <button class="btn btn-primary" onclick="saveFluxoConfig()">Salvar</button>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function renderFluxoConfigModal(){
+  const linhas=getFluxoLinhas();
+  // Build unique DRE list from plano
+  const dreList=[...new Set(PLANO_CONTAS.filter(p=>p.situacao==='Ativo'&&p.conta_dre).map(p=>p.conta_dre))].sort();
+  
+  document.getElementById('modalBody').innerHTML=`
+    <div style="font-size:.75rem;color:var(--text3);margin-bottom:.75rem">
+      Reordene arrastando, edite os rótulos e configure cada linha. Linhas do tipo <b>DRE</b> somam lançamentos por Conta DRE.
+    </div>
+    <div id="fluxoConfigList">
+      ${linhas.map((l,i)=>buildFluxoConfigRow(l,i,dreList)).join('')}
+    </div>`;
+}
+
+function buildFluxoConfigRow(l,i,dreList){
+  const tipoOpts=['dre','separador','total','resultado','saldo','transferencia'].map(t=>
+    `<option value="${t}"${l.tipo===t?' selected':''}>${t}</option>`).join('');
+  const movOpts=['receita','despesa'].map(m=>
+    `<option value="${m}"${l.movimento===m?' selected':''}>${m}</option>`).join('');
+  const dreOpts=['<option value="">--</option>',...(dreList||[]).map(d=>
+    `<option value="${d}"${l.conta_dre===d?' selected':''}>${d}</option>`)].join('');
+  const corOpts=['','volt','red','blue','yellow'].map(c=>
+    `<option value="${c}"${l.cor===c?' selected':''}>${c||'padrão'}</option>`).join('');
+
+  return `<div class="fluxo-edit-row" id="flrow_${i}">
+    <span class="fluxo-drag-handle">⠿</span>
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1.5fr .8fr .6fr auto;gap:.35rem;align-items:center">
+      <input class="form-control" style="font-size:.73rem" value="${l.label||''}"
+        oninput="updateFluxoLinha(${i},'label',this.value)" placeholder="Rótulo">
+      <select class="form-control" style="font-size:.73rem" onchange="updateFluxoLinha(${i},'tipo',this.value)">${tipoOpts}</select>
+      <select class="form-control" style="font-size:.73rem" onchange="updateFluxoLinha(${i},'conta_dre',this.value)">${dreOpts}</select>
+      <select class="form-control" style="font-size:.73rem" onchange="updateFluxoLinha(${i},'movimento',this.value)">${movOpts}</select>
+      <select class="form-control" style="font-size:.73rem" onchange="updateFluxoLinha(${i},'cor',this.value)">${corOpts}</select>
+      <div style="display:flex;gap:.25rem">
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="moveFluxoLinha(${i},-1)" title="Mover para cima">↑</button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="moveFluxoLinha(${i},1)" title="Mover para baixo">↓</button>
+        <button class="btn btn-sm btn-danger btn-icon" onclick="removeFluxoLinha(${i})">✕</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updateFluxoLinha(i,f,v){
+  if(!state.fluxoLinhas[i])return;
+  state.fluxoLinhas[i][f]=v;
+  // Re-render config modal
+  const dreList=[...new Set(PLANO_CONTAS.filter(p=>p.situacao==='Ativo'&&p.conta_dre).map(p=>p.conta_dre))].sort();
+  document.getElementById('fluxoConfigList').innerHTML=
+    state.fluxoLinhas.map((l,idx)=>buildFluxoConfigRow(l,idx,dreList)).join('');
+}
+
+function moveFluxoLinha(i,dir){
+  const arr=state.fluxoLinhas;
+  const ni=i+dir;
+  if(ni<0||ni>=arr.length)return;
+  [arr[i],arr[ni]]=[arr[ni],arr[i]];
+  const dreList=[...new Set(PLANO_CONTAS.filter(p=>p.situacao==='Ativo'&&p.conta_dre).map(p=>p.conta_dre))].sort();
+  document.getElementById('fluxoConfigList').innerHTML=
+    arr.map((l,idx)=>buildFluxoConfigRow(l,idx,dreList)).join('');
+}
+
+function removeFluxoLinha(i){
+  state.fluxoLinhas.splice(i,1);
+  const dreList=[...new Set(PLANO_CONTAS.filter(p=>p.situacao==='Ativo'&&p.conta_dre).map(p=>p.conta_dre))].sort();
+  document.getElementById('fluxoConfigList').innerHTML=
+    state.fluxoLinhas.map((l,idx)=>buildFluxoConfigRow(l,idx,dreList)).join('');
+}
+
+function addFluxoLinha(){
+  state.fluxoLinhas.push({id:'fl'+Date.now(),tipo:'dre',label:'Nova Linha',conta_dre:'',movimento:'despesa',cor:''});
+  const dreList=[...new Set(PLANO_CONTAS.filter(p=>p.situacao==='Ativo'&&p.conta_dre).map(p=>p.conta_dre))].sort();
+  document.getElementById('fluxoConfigList').innerHTML=
+    state.fluxoLinhas.map((l,i)=>buildFluxoConfigRow(l,i,dreList)).join('');
+}
+
+function saveFluxoConfig(){
+  saveState();
+  closeModal();
+  renderFluxoCaixa();
+  showToast('Fluxo de caixa atualizado!','success');
+}
+
+function resetFluxoDefault(){
+  if(!confirm('Restaurar configuração padrão? As personalizações serão perdidas.'))return;
+  state.fluxoLinhas=JSON.parse(JSON.stringify(FLUXO_DEFAULT));
+  saveState();
+  closeModal();
+  renderFluxoCaixa();
+  showToast('Configuração padrão restaurada.','success');
+}
+
 // MODAL helpers
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
 
@@ -1802,6 +2250,11 @@ function closeModal(){document.getElementById('modalOverlay').classList.remove('
 function init(){
   updateStepDone();
   updatePeriodSelector();
+  // Init fluxo lines if not set
+  if(!state.fluxoLinhas||!state.fluxoLinhas.length){
+    state.fluxoLinhas=JSON.parse(JSON.stringify(FLUXO_DEFAULT));
+    saveState();
+  }
   
   // Default rules from EZVOLT patterns
   if(!state.regras.length){
