@@ -380,6 +380,39 @@ tbody td{padding:.5rem .75rem;color:var(--text);vertical-align:middle}
     </div>
   </div>
 
+  <!-- BULK ACTION BAR -->
+  <div id="bulkBar" class="hidden no-print" style="background:var(--bg3);border:1px solid var(--volt);border-radius:8px;padding:.6rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+    <span style="font-size:.78rem;font-weight:600;color:var(--volt)" id="bulkCount">0 selecionados</span>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <select class="form-control" style="width:auto;min-width:90px;font-size:.75rem" id="bulkTipo">
+        <option value="">Tipo...</option>
+        <option value="receita">Receita</option>
+        <option value="despesa">Despesa</option>
+        <option value="transferencia">Transferência</option>
+      </select>
+      <select class="form-control" style="width:auto;min-width:185px;font-size:.75rem" id="bulkCat">
+        <option value="">Categoria...</option>
+      </select>
+      <select class="form-control" style="width:auto;min-width:140px;font-size:.75rem" id="bulkLinha">
+        <option value="">Linha de Negócio...</option>
+        <option value="Recarga B2C">Recarga B2C</option>
+        <option value="Recarga B2B">Recarga B2B</option>
+        <option value="E-BUS">E-BUS</option>
+        <option value="Chargers as a Service">Chargers as a Service</option>
+        <option value="O&M">O&M</option>
+        <option value="Software">Software</option>
+        <option value="Geral/Overhead">Geral/Overhead</option>
+      </select>
+      <select class="form-control" style="width:auto;min-width:110px;font-size:.75rem" id="bulkRecorrente">
+        <option value="">Recorrente...</option>
+        <option value="recorrente">Recorrente</option>
+        <option value="extraordinario">Extraordinário</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="applyBulk()">✓ Aplicar em todos</button>
+    <button class="btn btn-secondary btn-sm" onclick="clearSelection()">✕ Limpar seleção</button>
+  </div>
+
   <div class="flex gap-1 mb-2 no-print" style="flex-wrap:wrap">
     <select class="form-control" style="width:auto;min-width:130px" id="filtroMes" onchange="renderClassifTable()">
       <option value="">Todos os meses</option>
@@ -402,6 +435,9 @@ tbody td{padding:.5rem .75rem;color:var(--text);vertical-align:middle}
     <table id="classifTable">
       <thead>
         <tr>
+          <th style="width:32px;text-align:center">
+            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)" title="Selecionar todos">
+          </th>
           <th style="width:90px">Data</th>
           <th>Descrição</th>
           <th style="width:90px">Valor</th>
@@ -1126,6 +1162,9 @@ function renderClassifTable(){
     const valSign=l.tipo_mov==='receita'?'+':'-';
     
     return `<tr class="${rowCls}" data-id="${l.id}">
+      <td style="text-align:center;padding:.4rem .3rem">
+        <input type="checkbox" class="row-check" data-id="${l.id}" onchange="onRowCheck(this)" style="cursor:pointer;width:14px;height:14px;accent-color:var(--volt)">
+      </td>
       <td>${fmtDate(l.data)}</td>
       <td class="td-desc" title="${(l.desc_original||'').replace(/"/g,'&quot;')}">${l.desc_original||''}</td>
       <td class="${valCls} font-mono">${valSign}${fmtBRL(l.valor)}</td>
@@ -1664,15 +1703,13 @@ function updateStepDone(){
 }
 
 function switchTab(el, id){
+  // Deactivate all tabs in the same .tabs container
   el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  const tabs=el.closest('.tabs').nextElementSibling;
-  // find all sibling tab-contents
-  let sibling=tabs;
-  while(sibling){
-    if(sibling.classList&&sibling.classList.contains('tab-content')){sibling.classList.remove('active');}
-    sibling=sibling.nextElementSibling;
-  }
+  // Find the parent container of the tabs group
+  const container = el.closest('.tabs').parentElement;
+  // Deactivate all tab-content divs within that same parent
+  container.querySelectorAll('.tab-content').forEach(tc=>tc.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
@@ -1875,6 +1912,103 @@ function showToast(msg, type='success'){
   setTimeout(()=>t.remove(),3500);
 }
 
+
+
+// ============================================================
+// SELEÇÃO EM MASSA
+// ============================================================
+
+function onRowCheck(cb){
+  updateBulkBar();
+}
+
+function toggleSelectAll(checked){
+  document.querySelectorAll('.row-check').forEach(cb=>{cb.checked=checked;});
+  updateBulkBar();
+}
+
+function updateBulkBar(){
+  const checked=document.querySelectorAll('.row-check:checked');
+  const bar=document.getElementById('bulkBar');
+  const selectAllCb=document.getElementById('selectAll');
+  const all=document.querySelectorAll('.row-check');
+  
+  if(checked.length>0){
+    bar.classList.remove('hidden');
+    bar.style.display='flex';
+    document.getElementById('bulkCount').textContent=`${checked.length} selecionado${checked.length>1?'s':''}`;
+    if(selectAllCb) selectAllCb.indeterminate=(checked.length>0&&checked.length<all.length);
+    if(selectAllCb&&checked.length===all.length) {selectAllCb.checked=true;selectAllCb.indeterminate=false;}
+    // Populate bulk cat options if empty
+    const bulkCat=document.getElementById('bulkCat');
+    if(bulkCat&&bulkCat.options.length<=1){
+      bulkCat.innerHTML='<option value="">Categoria...</option>'+
+        Object.entries(planoAtivos.reduce((g,p)=>{
+          const k=p.conta_dre||'Outros';
+          if(!g[k])g[k]=[];g[k].push(p.categoria);return g;
+        },{})).sort().map(([g,cats])=>
+          `<optgroup label="${g}">${cats.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('')}</optgroup>`
+        ).join('');
+    }
+  } else {
+    bar.classList.add('hidden');
+    bar.style.display='';
+    if(selectAllCb){selectAllCb.checked=false;selectAllCb.indeterminate=false;}
+  }
+}
+
+function getSelectedIds(){
+  return [...document.querySelectorAll('.row-check:checked')].map(cb=>cb.dataset.id);
+}
+
+function applyBulk(){
+  const ids=getSelectedIds();
+  if(!ids.length)return;
+  
+  const tipo=document.getElementById('bulkTipo').value;
+  const cat=document.getElementById('bulkCat').value;
+  const linha=document.getElementById('bulkLinha').value;
+  const recorrente=document.getElementById('bulkRecorrente').value;
+  
+  if(!tipo&&!cat&&!linha&&!recorrente){
+    showToast('Selecione pelo menos um campo para aplicar.','error');
+    return;
+  }
+  
+  let count=0;
+  ids.forEach(id=>{
+    const l=state.lancamentos.find(x=>x.id===id);
+    if(!l)return;
+    if(tipo){l.tipo_mov=tipo;if(tipo==='transferencia')l.is_transferencia=true;}
+    if(cat){
+      l.categoria=cat;
+      l.conta_dre=getContaDRE(cat);
+      l.tipo_gasto=getTipoGasto(cat);
+      l.status='classificado';
+    }
+    if(linha)l.linha_neg=linha;
+    if(recorrente)l.recorrente=recorrente;
+    if(cat||tipo)l.status=l.categoria?'classificado':'pendente';
+    count++;
+  });
+  
+  saveState();
+  clearSelection();
+  renderClassifTable();
+  showToast(`${count} lançamento${count>1?'s':''} atualizado${count>1?'s':''}.`,'success');
+}
+
+function clearSelection(){
+  document.querySelectorAll('.row-check').forEach(cb=>{cb.checked=false;});
+  const sa=document.getElementById('selectAll');
+  if(sa){sa.checked=false;sa.indeterminate=false;}
+  // Reset bulk selects
+  ['bulkTipo','bulkCat','bulkLinha','bulkRecorrente'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value='';
+  });
+  updateBulkBar();
+}
 
 // ============================================================
 // FLUXO DE CAIXA
