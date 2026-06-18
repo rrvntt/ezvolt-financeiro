@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EZVOLT — Financeiro</title>
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;scroll-behavior:smooth}
+body{background:#0A1F1C;color:#E0EDE8;font-family:'Inter',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* ===== TYPOGRAPHY ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+h1,h2,h3,h4,.font-display{font-family:'Space Grotesk',system-ui,sans-serif}
+
+/* ===== COLORS ===== */
+:root{
+  --bg:#0A1F1C;
+  --bg2:#0E2822;
+  --bg3:#122E28;
+  --card:#0F2520;
+  --card2:#142B26;
+  --border:#1E3D35;
+  --border2:#255044;
+  --volt:#15C26B;
+  --volt2:#0FA858;
+  --volt-dim:#0D7A43;
+  --volt-glow:rgba(21,194,107,0.15);
+  --text:#E0EDE8;
+  --text2:#A8C4BC;
+  --text3:#6B9E93;
+  --red:#E55353;
+  --red-dim:rgba(229,83,83,0.15);
+  --yellow:#F0B429;
+  --yellow-dim:rgba(240,180,41,0.15);
+  --blue:#4DA3FF;
+  --blue-dim:rgba(77,163,255,0.15);
+  --orange:#FF8C42;
+}
+
+/* ===== LAYOUT ===== */
+.app-header{position:sticky;top:0;z-index:100;background:#0A1F1C;border-bottom:1px solid var(--border);padding:0 1.5rem}
+.header-inner{display:flex;align-items:center;gap:1rem;height:52px;max-width:1400px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:.5rem;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;color:var(--volt)}
+.logo-mark{width:26px;height:26px;background:var(--volt);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:16px;height:16px;fill:#0A1F1C}
+.header-spacer{flex:1}
+.gear-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;padding:6px 8px;display:flex;align-items:center;gap:.4rem;font-size:.8rem;transition:all .15s}
+.gear-btn:hover{border-color:var(--volt);color:var(--volt)}
+
+/* ===== STEPPER ===== */
+.stepper{display:flex;align-items:center;gap:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.5rem}
+.stepper-inner{display:flex;align-items:center;max-width:1400px;margin:0 auto;width:100%}
+.step{display:flex;align-items:center;gap:.5rem;padding:.6rem 1.2rem;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--text3);font-size:.8rem;font-weight:500;transition:all .15s;white-space:nowrap}
+.step:hover{color:var(--text2)}
+.step.active{color:var(--volt);border-bottom-color:var(--volt)}
+.step-num{width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0}
+.step.active .step-num{background:var(--volt);border-color:var(--volt);color:#0A1F1C}
+.step.done .step-num{background:var(--volt-dim);border-color:var(--volt);color:var(--volt)}
+.step-sep{color:var(--border2);margin:0 .25rem;font-size:.8rem}
+
+/* ===== MAIN CONTENT ===== */
+.main{max-width:1400px;margin:0 auto;padding:1.5rem}
+.page{display:none}
+.page.active{display:block}
+
+/* ===== CARDS ===== */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.card-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem;color:var(--text)}
+.card-subtitle{font-size:.75rem;color:var(--text3);margin-top:.15rem}
+.cards-grid{display:grid;gap:1rem}
+.cards-2{grid-template-columns:1fr 1fr}
+.cards-3{grid-template-columns:1fr 1fr 1fr}
+.cards-4{grid-template-columns:1fr 1fr 1fr 1fr}
+
+/* ===== KPI CARDS ===== */
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.25rem}
+.kpi-label{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:.35rem}
+.kpi-value{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700}
+.kpi-value.green{color:var(--volt)}
+.kpi-value.red{color:var(--red)}
+.kpi-value.yellow{color:var(--yellow)}
+.kpi-value.blue{color:var(--blue)}
+.kpi-sub{font-size:.72rem;color:var(--text3);margin-top:.2rem}
+
+/* ===== BADGES ===== */
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.badge-green{background:var(--volt-glow);color:var(--volt)}
+.badge-red{background:var(--red-dim);color:var(--red)}
+.badge-yellow{background:var(--yellow-dim);color:var(--yellow)}
+.badge-blue{background:var(--blue-dim);color:var(--blue)}
+.badge-gray{background:rgba(107,158,147,.12);color:var(--text3)}
+.badge-orange{background:rgba(255,140,66,.12);color:var(--orange)}
+
+/* ===== BUTTONS ===== */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;text-decoration:none}
+.btn-primary{background:var(--volt);color:#0A1F1C}
+.btn-primary:hover{background:var(--volt2)}
+.btn-secondary{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--volt);color:var(--volt)}
+.btn-danger{background:var(--red-dim);border:1px solid var(--red);color:var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-sm{padding:.3rem .7rem;font-size:.72rem}
+.btn-icon{padding:.4rem;width:30px;height:30px;justify-content:center}
+
+/* ===== FORMS ===== */
+.form-group{margin-bottom:.9rem}
+.form-label{display:block;font-size:.75rem;color:var(--text2);margin-bottom:.35rem;font-weight:500}
+.form-control{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;color:var(--text);font-size:.8rem;outline:none;transition:border-color .15s}
+.form-control:focus{border-color:var(--volt)}
+.form-control::placeholder{color:var(--text3)}
+select.form-control option{background:#0E2822}
+textarea.form-control{resize:vertical;min-height:80px}
+.form-row{display:grid;gap:.75rem}
+.form-row-2{grid-template-columns:1fr 1fr}
+.form-row-3{grid-template-columns:1fr 1fr 1fr}
+.form-row-4{grid-template-columns:1fr 1fr 1fr 1fr}
+
+/* ===== TABLES ===== */
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+thead th{background:var(--bg3);color:var(--text3);font-weight:600;padding:.55rem .75rem;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);font-size:.72rem;text-transform:uppercase;letter-spacing:.03em}
+tbody tr{border-bottom:1px solid rgba(30,61,53,.5)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+tbody td{padding:.5rem .75rem;color:var(--text);vertical-align:middle}
+.td-desc{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== STATUS DOTS ===== */
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
+.dot-green{background:var(--volt)}
+.dot-red{background:var(--red)}
+.dot-yellow{background:var(--yellow)}
+.dot-blue{background:var(--blue)}
+.dot-gray{background:var(--text3)}
+
+/* ===== DROP ZONE ===== */
+.drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--volt);background:var(--volt-glow)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-icon{font-size:2.5rem;margin-bottom:.75rem}
+.drop-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1rem;color:var(--text);margin-bottom:.4rem}
+.drop-sub{font-size:.78rem;color:var(--text3)}
+
+/* ===== PROGRESS / SUMMARY ===== */
+.import-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem}
+.sum-item{background:var(--bg3);border-radius:8px;padding:.75rem;text-align:center}
+.sum-num{font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;color:var(--volt)}
+.sum-label{font-size:.68rem;color:var(--text3);margin-top:.2rem}
+
+/* ===== TABS ===== */
+.tabs{display:flex;gap:.25rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
+.tab{padding:.5rem .9rem;font-size:.78rem;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab.active{color:var(--volt);border-bottom-color:var(--volt)}
+.tab:hover{color:var(--text2)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:12px;width:90%;max-width:640px;max-height:90vh;overflow-y:auto;padding:1.5rem}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.modal-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem}
+.modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.2rem;line-height:1;padding:.2rem}
+.modal-close:hover{color:var(--text)}
+.modal-footer{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* ===== INLINE EDIT ===== */
+.inline-select{background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:.75rem;padding:.25rem .5rem;max-width:100%;outline:none}
+.inline-select:focus{border-color:var(--volt)}
+.inline-input{background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:.75rem;padding:.25rem .5rem;width:100%;outline:none}
+.inline-input:focus{border-color:var(--volt)}
+
+/* ===== CHART BARS ===== */
+.bar-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem}
+.bar-label{font-size:.75rem;color:var(--text2);flex:0 0 200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;background:var(--bg3);border-radius:4px;height:16px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.bar-val{font-size:.73rem;color:var(--text2);flex:0 0 90px;text-align:right;font-family:'Space Grotesk',sans-serif}
+
+/* ===== ALERTS ===== */
+.alert{padding:.75rem 1rem;border-radius:8px;font-size:.8rem;display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.75rem}
+.alert-info{background:var(--blue-dim);border:1px solid rgba(77,163,255,.25);color:var(--blue)}
+.alert-warn{background:var(--yellow-dim);border:1px solid rgba(240,180,41,.25);color:var(--yellow)}
+.alert-success{background:var(--volt-glow);border:1px solid rgba(21,194,107,.25);color:var(--volt)}
+.alert-error{background:var(--red-dim);border:1px solid rgba(229,83,83,.25);color:var(--red)}
+
+/* ===== SETTINGS PANEL ===== */
+.settings-overlay{display:none;position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.5)}
+.settings-panel{position:fixed;top:0;right:-420px;width:420px;height:100vh;background:var(--card);border-left:1px solid var(--border2);overflow-y:auto;z-index:151;transition:right .3s;padding:1.5rem}
+.settings-overlay.open{display:block}
+.settings-overlay.open .settings-panel{right:0}
+.settings-section{margin-bottom:1.5rem}
+.settings-section-title{font-family:'Space Grotesk',sans-serif;font-size:.78rem;font-weight:700;color:var(--volt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+
+/* ===== TOGGLE ===== */
+.toggle{position:relative;width:36px;height:20px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:10px;transition:.2s}
+.toggle-slider::before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--volt)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(16px);background:#0A1F1C}
+
+/* ===== CHART MONTH ===== */
+.monthly-chart{display:flex;align-items:flex-end;gap:.35rem;height:120px;padding:.5rem 0}
+.month-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:.25rem}
+.month-bars{display:flex;gap:2px;align-items:flex-end;height:90px;width:100%}
+.month-bar{flex:1;border-radius:3px 3px 0 0;min-height:2px;transition:height .4s}
+.month-label{font-size:.65rem;color:var(--text3);text-align:center}
+
+/* ===== PRINT ===== */
+@media print{
+  .app-header,.stepper,.no-print,.settings-overlay{display:none!important}
+  body{background:#fff;color:#000}
+  .card,.kpi-card{background:#fff;border:1px solid #ddd;break-inside:avoid}
+  .kpi-value.green,.kpi-value{color:#000}
+}
+
+/* ===== MISC ===== */
+.section-title{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:1rem}
+.section-sub{font-size:.78rem;color:var(--text3);margin-bottom:1.25rem}
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+.mt-1{margin-top:.5rem}.mt-2{margin-top:1rem}.mt-3{margin-top:1.5rem}
+.mb-1{margin-bottom:.5rem}.mb-2{margin-bottom:1rem}.mb-3{margin-bottom:1.5rem}
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.gap-1{gap:.5rem}.gap-2{gap:1rem}
+.text-right{text-align:right}
+.text-sm{font-size:.75rem}
+.text-xs{font-size:.68rem}
+.text-muted{color:var(--text3)}
+.text-volt{color:var(--volt)}
+.text-red{color:var(--red)}
+.text-yellow{color:var(--yellow)}
+.font-mono{font-family:monospace}
+.w-full{width:100%}
+.hidden{display:none!important}
+.row-transferencia{background:rgba(77,163,255,.04)!important}
+.row-pendente td:first-child{border-left:2px solid var(--yellow)}
+.row-classificado td:first-child{border-left:2px solid var(--volt)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 16 16"><path d="M10 1L4 9h5l-3 6 8-9h-5L10 1z"/></svg>
+      </div>
+      EZVOLT <span style="color:var(--text3);font-weight:400;font-size:.85rem">Financeiro</span>
+    </div>
+    <div class="header-spacer"></div>
+    <span id="headerPeriod" style="font-size:.75rem;color:var(--text3);margin-right:.5rem"></span>
+    <button class="btn btn-sm btn-secondary no-print" onclick="exportPDF()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      PDF
+    </button>
+    <button class="btn btn-sm btn-secondary no-print" onclick="exportXLSX()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+      XLSX
+    </button>
+    <button class="gear-btn no-print" onclick="openSettings()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Configurações
+    </button>
+  </div>
+</header>
+
+<!-- STEPPER -->
+<div class="stepper no-print">
+  <div class="stepper-inner">
+    <div class="step active" id="step1" onclick="goPage(1)">
+      <div class="step-num">1</div>
+      <span>Importar</span>
+    </div>
+    <div class="step-sep">›</div>
+    <div class="step" id="step2" onclick="goPage(2)">
+      <div class="step-num">2</div>
+      <span>Classificar</span>
+    </div>
+    <div class="step-sep">›</div>
+    <div class="step" id="step3" onclick="goPage(3)">
+      <div class="step-num">3</div>
+      <span>Dashboard</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ===== PAGE 1: IMPORTAR ===== -->
+<div class="page active" id="page1">
+  <div class="section-title">Importar Extrato</div>
+  <div class="section-sub">Importe o extrato bancário do Bradesco. Formatos aceitos: XLSX exportado do Omie ou CSV padrão Bradesco.</div>
+
+  <div class="tabs no-print">
+    <div class="tab active" onclick="switchTab(this,'tab-file')">Arquivo</div>
+    <div class="tab" onclick="switchTab(this,'tab-paste')">Colar Texto</div>
+    <div class="tab" onclick="switchTab(this,'tab-backup')">Backup JSON</div>
+  </div>
+
+  <div class="tab-content active" id="tab-file">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx,.csv,.txt" onchange="handleFileSelect(event)">
+      <div class="drop-icon">📂</div>
+      <div class="drop-title">Arraste o arquivo ou clique para selecionar</div>
+      <div class="drop-sub mt-1">Suporte: XLSX (Omie), CSV (Bradesco), TXT</div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-paste">
+    <textarea class="form-control" id="pasteArea" rows="8" placeholder="Cole aqui o conteúdo do extrato..."></textarea>
+    <button class="btn btn-primary mt-2" onclick="parsePasteText()">Processar Texto</button>
+  </div>
+
+  <div class="tab-content" id="tab-backup">
+    <div class="card">
+      <div class="card-title mb-2">Restaurar Backup JSON</div>
+      <input type="file" id="backupInput" accept=".json" class="form-control mb-2" onchange="importBackup(event)">
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button class="btn btn-secondary" onclick="exportBackup()">⬇ Exportar Backup Atual</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑 Limpar Tudo</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="importSummaryArea" class="hidden mt-3">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Resumo da Importação</div>
+          <div class="card-subtitle" id="importFileName"></div>
+        </div>
+        <button class="btn btn-primary" onclick="goPage(2)">Classificar →</button>
+      </div>
+      <div class="import-summary" id="importSummary"></div>
+      <div id="importAlerts" class="mt-2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE 2: CLASSIFICAR ===== -->
+<div class="page" id="page2">
+  <div class="flex items-center justify-between mb-2">
+    <div>
+      <div class="section-title" style="margin:0">Classificar Lançamentos</div>
+      <div class="text-sm text-muted" id="classifSubtitle"></div>
+    </div>
+    <div class="flex gap-1 no-print">
+      <button class="btn btn-secondary btn-sm" id="btnSomentePendentes" onclick="togglePendentes()">👁 Somente Pendentes</button>
+      <button class="btn btn-secondary btn-sm" onclick="autoClassificarTodos()">⚡ Auto-Classificar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmarClassificacoes()">✓ Confirmar e Aprender</button>
+      <button class="btn btn-primary btn-sm" onclick="goPage(3)">Dashboard →</button>
+    </div>
+  </div>
+
+  <div class="flex gap-1 mb-2 no-print" style="flex-wrap:wrap">
+    <select class="form-control" style="width:auto;min-width:130px" id="filtroMes" onchange="renderClassifTable()">
+      <option value="">Todos os meses</option>
+    </select>
+    <select class="form-control" style="width:auto;min-width:130px" id="filtroTipo" onchange="renderClassifTable()">
+      <option value="">Todos os tipos</option>
+      <option value="receita">Receita</option>
+      <option value="despesa">Despesa</option>
+      <option value="transferencia">Transferência</option>
+    </select>
+    <select class="form-control" style="width:auto;min-width:130px" id="filtroStatus" onchange="renderClassifTable()">
+      <option value="">Todos os status</option>
+      <option value="pendente">Pendente</option>
+      <option value="classificado">Classificado</option>
+    </select>
+    <input class="form-control" style="width:auto;min-width:160px" id="filtroSearch" placeholder="🔍 Buscar..." oninput="renderClassifTable()">
+  </div>
+
+  <div class="table-wrap">
+    <table id="classifTable">
+      <thead>
+        <tr>
+          <th style="width:90px">Data</th>
+          <th>Descrição</th>
+          <th style="width:90px">Valor</th>
+          <th style="width:70px">Tipo</th>
+          <th style="width:180px">Categoria</th>
+          <th style="width:130px">Linha de Negócio</th>
+          <th style="width:85px">Recorrente</th>
+          <th style="width:75px">Transf.</th>
+          <th style="width:130px">Conta Destino</th>
+          <th style="width:55px">Status</th>
+        </tr>
+      </thead>
+      <tbody id="classifBody"></tbody>
+    </table>
+  </div>
+  <div id="classifEmpty" class="hidden" style="text-align:center;padding:3rem;color:var(--text3)">
+    <div style="font-size:2rem;margin-bottom:.5rem">📋</div>
+    Nenhum lançamento encontrado. Importe um extrato primeiro.
+  </div>
+</div>
+
+<!-- ===== PAGE 3: DASHBOARD ===== -->
+<div class="page" id="page3">
+  <!-- Period selector -->
+  <div class="flex items-center justify-between mb-3 no-print">
+    <div class="section-title" style="margin:0">Dashboard Financeiro</div>
+    <div class="flex gap-1 items-center">
+      <select class="form-control" style="width:auto;min-width:140px" id="dashPeriod" onchange="renderDashboard()">
+        <option value="all">Tudo</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="exportPDF()">🖨 PDF</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportXLSX()">📊 XLSX</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="cards-4 cards-grid mb-3">
+    <div class="kpi-card">
+      <div class="kpi-label">Receita</div>
+      <div class="kpi-value green" id="kpiReceita">R$ 0</div>
+      <div class="kpi-sub" id="kpiReceitaSub"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Despesa</div>
+      <div class="kpi-value red" id="kpiDespesa">R$ 0</div>
+      <div class="kpi-sub" id="kpiDespesaSub"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Resultado</div>
+      <div class="kpi-value" id="kpiResultado">R$ 0</div>
+      <div class="kpi-sub" id="kpiResultadoSub"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Saldo em Caixa</div>
+      <div class="kpi-value blue" id="kpiCaixa">R$ 0</div>
+      <div class="kpi-sub" id="kpiCaixaSub"></div>
+    </div>
+  </div>
+
+  <div class="cards-2 cards-grid mb-3">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Top 5 Receitas por Categoria</div>
+      </div>
+      <div id="topReceitas"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Top 5 Despesas por Categoria</div>
+      </div>
+      <div id="topDespesas"></div>
+    </div>
+  </div>
+
+  <div class="cards-2 cards-grid mb-3">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Receita por Linha de Negócio</div>
+      </div>
+      <div id="receitaLinhaNeg"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Despesa por Linha de Negócio</div>
+      </div>
+      <div id="despesaLinhaNeg"></div>
+    </div>
+  </div>
+
+  <div class="cards-2 cards-grid mb-3">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Recorrente × Extraordinário (Receita)</div></div>
+      <div id="recorrReceita"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Recorrente × Extraordinário (Despesa)</div></div>
+      <div id="recorrDespesa"></div>
+    </div>
+  </div>
+
+  <!-- Evolução Mensal -->
+  <div class="card mb-3">
+    <div class="card-header"><div class="card-title">Evolução Mensal</div></div>
+    <div id="evolucaoMensal"></div>
+  </div>
+
+  <!-- DRE -->
+  <div class="card mb-3">
+    <div class="card-header"><div class="card-title">Resumo DRE por Conta</div></div>
+    <div id="dreResumo"></div>
+  </div>
+
+  <!-- Caixa por Conta -->
+  <div class="card mb-3">
+    <div class="card-header"><div class="card-title">Posição de Caixa por Conta</div></div>
+    <div id="caixaConta"></div>
+  </div>
+
+  <!-- Transferencias -->
+  <div class="card mb-3">
+    <div class="card-header"><div class="card-title">Transferências Entre Contas</div></div>
+    <div id="transferenciasLista"></div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<!-- ===== SETTINGS PANEL ===== -->
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettingsOnOutside(event)">
+  <div class="settings-panel" id="settingsPanel">
+    <div class="flex items-center justify-between mb-3">
+      <div class="section-title" style="margin:0;font-size:.95rem">⚙ Configurações</div>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchSettingsTab(this,'st-contas')">Contas</div>
+      <div class="tab" onclick="switchSettingsTab(this,'st-regras')">Regras</div>
+      <div class="tab" onclick="switchSettingsTab(this,'st-fixos')">Fixos</div>
+      <div class="tab" onclick="switchSettingsTab(this,'st-memoria')">Memória</div>
+      <div class="tab" onclick="switchSettingsTab(this,'st-plano')">Plano</div>
+    </div>
+
+    <!-- CONTAS -->
+    <div class="tab-content active" id="st-contas">
+      <div id="contasList"></div>
+      <button class="btn btn-secondary btn-sm mt-2 w-full" onclick="addConta()">+ Adicionar Conta</button>
+    </div>
+
+    <!-- REGRAS -->
+    <div class="tab-content" id="st-regras">
+      <div id="regrasList"></div>
+      <button class="btn btn-secondary btn-sm mt-2 w-full" onclick="addRegra()">+ Nova Regra</button>
+    </div>
+
+    <!-- FIXOS -->
+    <div class="tab-content" id="st-fixos">
+      <div id="fixosList"></div>
+      <button class="btn btn-secondary btn-sm mt-2 w-full" onclick="addFixo()">+ Novo Lançamento Fixo</button>
+    </div>
+
+    <!-- MEMÓRIA -->
+    <div class="tab-content" id="st-memoria">
+      <div class="flex justify-between mb-2">
+        <span class="text-sm text-muted" id="memoriaCount">0 entradas</span>
+        <button class="btn btn-danger btn-sm" onclick="clearMemoria()">Limpar Memória</button>
+      </div>
+      <div id="memoriaList" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+
+    <!-- PLANO DE CONTAS -->
+    <div class="tab-content" id="st-plano">
+      <input class="form-control mb-2" id="planoBusca" placeholder="🔍 Buscar categoria..." oninput="renderPlanoSettings()">
+      <div id="planoList" style="max-height:500px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GENÉRICO -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Modal</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ============================================================
+// DATA & STATE
+// ============================================================
+const PLANO_CONTAS = [{"situacao": "Inativo", "categoria": "1.0 PRESTAÇÃO DE SERVIÇOS - MY FLEET", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.1 PRESTAÇÃO DE SERVIÇOS - RECARGA", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.2 PRESTAÇÃO DE SERVIÇOS - INSTALAÇÕES", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.3 OPERAÇÃO ELETROPOSTOS", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.4 VENDA DE EQUIPAMENTO", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.5 SAAS - SOFTWARE AS A SERVICE", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.6 VEICULAÇÃO DE MÍDIA E PUBLICIDADE - MÍDIA", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.7 PRESTAÇÃO DE SERVIÇOS TÉCNICOS", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.8 DESENVOLVIMENTO DE APLICATIVO MÓVEL - APP", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.0.1 PRESTAÇÃO DE SERVIÇOS - MY FLEET - ÔNIBUS", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.1.1 PRESTAÇÃO DE SERVIÇOS - RECARGA - B2B", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.1.2 PRESTAÇÃO DE SERVIÇOS - RECARGA - B2C", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.1.3 PRESTAÇÃO DE SERVIÇOS - RECARGA - ÔNIBUS", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "1.1.4 - PRESTAÇÃO DE SERVIÇOS - RECARGA - EMSP", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Ativo", "categoria": "100.0 OUTRAS RECEITAS", "conta_dre": "Outras Receitas", "tipo": ""}, {"situacao": "Ativo", "categoria": "100.1 ESTORNO DE PAGAMENTO", "conta_dre": "Outras Receitas", "tipo": ""}, {"situacao": "Ativo", "categoria": "200.0 RENDIMENTO SOBRE APLICAÇÕES", "conta_dre": "Receitas Financeiras", "tipo": ""}, {"situacao": "Ativo", "categoria": "200.1 DESCONTOS FINANCEIROS OBTIDOS", "conta_dre": "Receitas Financeiras", "tipo": ""}, {"situacao": "Ativo", "categoria": "200.2 JUROS RECEBIDOS DE CLIENTES", "conta_dre": "Receitas Financeiras", "tipo": ""}, {"situacao": "Inativo", "categoria": "200.3 DEVOLUÇÃO ORDEM DE PAGAMENTO", "conta_dre": "Receitas Financeiras", "tipo": ""}, {"situacao": "Ativo", "categoria": "300.0 DEVOLUÇÕES DE COMPRA DE MERCADORIA DE REVENDA", "conta_dre": "Recuperação de Despesas Variáveis", "tipo": ""}, {"situacao": "Ativo", "categoria": "300.1 DEVOLUÇÕES DE COMPRA DE MATERIAL DE CONSUMO", "conta_dre": "Recuperação de Despesas Variáveis", "tipo": ""}, {"situacao": "Ativo", "categoria": "300.2 DEVOLUÇÕES DE COMPRA DE MATÉRIA PRIMA", "conta_dre": "Recuperação de Despesas Variáveis", "tipo": ""}, {"situacao": "Ativo", "categoria": "300.3 DEVOLUÇÕES DE COMPRA DE ATIVO", "conta_dre": "Recuperação de Despesas Variáveis", "tipo": ""}, {"situacao": "Ativo", "categoria": "300.4 DEVOLUÇÕES DE COMPRA DE SERVIÇOS", "conta_dre": "Recuperação de Despesas Variáveis", "tipo": ""}, {"situacao": "Ativo", "categoria": "300.5 DEVOLUÇÃO REMESSA DE MATERIAIS", "conta_dre": "Recuperação de Despesas Variáveis", "tipo": ""}, {"situacao": "Ativo", "categoria": "300.6 DEVOLUÇÃO DE ATIVO DE TERCEIROS", "conta_dre": "Recuperação de Despesas Variáveis", "tipo": ""}, {"situacao": "Inativo", "categoria": "7.2 ADIANTAMENTO DE CARTÃO DE CRÉDITO", "conta_dre": "", "tipo": ""}, {"situacao": "Inativo", "categoria": "400.0 ADIANTAMENTO DE CLIENTES - PESSOA FISICA", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "400.0 CAPTAÇÕES DE EMPRÉSTIMOS BANCÁRIOS", "conta_dre": "", "tipo": ""}, {"situacao": "Inativo", "categoria": "400.1 ADIANTAMENTO DE CLIENTES - PESSOA JURÍDICA", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "400.1 INTEGRALIZAÇÃO DE CAPITAL", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "400.2 VENDA DE ATIVOS IMOBILIZADOS", "conta_dre": "Outras Receitas", "tipo": ""}, {"situacao": "Ativo", "categoria": "400.3 PRÊMIOS DE SEGUROS / SINISTROS", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "400.4 OUTRAS RECEITAS NÃO OPERACIONAIS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "400.5 VENDA", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "Venda de Participações", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "0.1 CHARGERS AS A SERVICE", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Ativo", "categoria": "0.2 E-BUS", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Ativo", "categoria": "0.3 RECARGA FROTAS - B2B", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Ativo", "categoria": "0.4 RECARGA VEÍCULOS - B2C", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Ativo", "categoria": "0.5 O&M SERVIÇOS", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Ativo", "categoria": "0.6 SOFTWARE", "conta_dre": "Receita Bruta de Vendas", "tipo": ""}, {"situacao": "Inativo", "categoria": "0.7 VENDA", "conta_dre": "Outras Receitas", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.0 (5039) REFORMAS E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "13.1 (5040) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "13.2 (5041) MATERIAIS DIVERSOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "13.4 (5042) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.5 (5043) TREINAMENTOS E DESENVOLVIMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.3.0 (5044) DESPESAS COM LOGISTICA: MANUTENÇÃO DE VEÍCULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "13.3.1 (5045) DESPESAS COM LOGISTICA: COMBUSTÍVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.3.2 (5046) DESPESAS COM LOGISTICA: ALUGUEIS DE VEICULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.3.3 (5047) DESPESAS COM LOGISTICA: FRETES", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Frete"}, {"situacao": "Inativo", "categoria": "13.3.4 (5048) DESPESAS COM LOGISTICA: TRANSPORTE URBANO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.3.5 (5049) DESPESAS COM LOGISTICA: ESTACIONAMENTO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.3.6 (5050) TAXAS E CONTRIBUIÇÕES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.3.7 (5051) DESPESAS COM LOGISTICA: HOSPEDAGEM", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.3.8 (5052) DESPESAS COM ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "13.3.9 (5053) LOCAÇÃO DE EQUIPAMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "13.3.10 (5054) DESPESAS COM LOGISTICA: PEDÁGIO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "14.0 (5056) REFORMAS E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "14.1 (5057) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "14.2 (5058) MATERIAIS DIVERSOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "14.3 (5059) REPASSE DE ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Gasto com Energia Elétrica"}, {"situacao": "Inativo", "categoria": "14.5 (5060) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "14.6 (5061) TREINAMENTOS E DESENVOLVIMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "14.4.0 (5062) DESPESAS COM LOGISTICA: MANUTENÇÃO DE VEÍCULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "14.4.1 (5063) DESPESAS COM LOGISTICA: COMBUSTÍVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "14.4.2 (5064) DESPESAS COM LOGISTICA: ALUGUEIS DE VEICULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "14.4.3 (5065) DESPESAS COM LOGISTICA: FRETES", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Frete"}, {"situacao": "Inativo", "categoria": "14.4.4 (5066) DESPESAS COM LOGISTICA: TRANSPORTE URBANO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "14.4.5 (5067) DESPESAS COM LOGISTICA: ESTACIONAMENTO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "14.4.6 (5068) TAXAS E CONTRIBUIÇÕES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "14.4.7 (5069) DESPESAS COM ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Gasto com Energia Elétrica"}, {"situacao": "Inativo", "categoria": "14.4.8 (5070) DESPESAS COM ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "14.4.9 (5071) DESPESAS COM LOGISTICA: PEDÁGIOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.0 (5073) ALUGUEL DE CARREGADORES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.1 (5074) REFORMAS E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.2 (5075) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.3 (5076) CUSTO COM ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.5 (5077) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.6 (5078) TREINAMENTOS E DESENVOLVIMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.7 (5079) MATERIAIS DIVERSOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.0 (5080) DESPESAS COM LOGISTICA: MANUTENÇÃO DE VEÍCULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.1 (5081) DESPESAS COM LOGISTICA: COMBUSTÍVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.2 (5082) DESPESAS COM LOGISTICA: ALUGUEIS DE VEICULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.3 (5083) DESPESAS COM LOGISTICA: FRETES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.4 (5084) DESPESAS COM LOGISTICA: TRANSPORTE URBANO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.5 (5085) DESPESAS COM LOGISTICA: ESTACIONAMENTO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.6 (5086) TAXAS E CONTRIBUIÇÕES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.7 (5087) DESPESAS COM ALUGUEL DE IMÓVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.8 (5088) DESPESAS COM ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "15.4.9 (5089) DESPESAS COM LOGISTICA: PEDÁGIO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "15.4.10 DESPESA COM ALUGUEL DE CARREGADORES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "16.0 (5091) FRETES E CARRETOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Frete"}, {"situacao": "Inativo", "categoria": "16.1 (5092) ICMS DIFERENCIAL DE ALIQUOTA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "100.0 DEVOLUÇÕES DE VENDAS DE MERCADORIA", "conta_dre": "Deduções de Receita", "tipo": ""}, {"situacao": "Ativo", "categoria": "100.1 DEVOLUÇÕES DE VENDAS DE SERVIÇOS PRESTADOS", "conta_dre": "Deduções de Receita", "tipo": ""}, {"situacao": "Inativo", "categoria": "5.4 ELETROPOSTO", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.0 (1087) MÓVEIS E UTENSÍLIOS", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.1 (1083) MÁQUINAS E EQUIPAMENTOS", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.2 (5200) USINA SOLAR FOTOVOLTAICA", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.4 (5444) CARREGADORES", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.5 (1080) EQUIPAMENTOS DE INFORMÁTICA", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.6  (5301) INFRAESTRUTURA ELETROPOSTOS", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.7 (1089) VEÍCULOS", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.8 (5429) PROJETO DE DESENVOLVIMENTO", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "500.9 OUTROS CUSTOS CAPEX", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Inativo", "categoria": "600.0 MERCADORIAS PARA REVENDA", "conta_dre": "Ativos", "tipo": "Compra de Mercadoria para Revenda"}, {"situacao": "Ativo", "categoria": "600.0 (5326) ESTOQUE DE COMPONENTES", "conta_dre": "Ativos", "tipo": "Compra de Ativo"}, {"situacao": "Ativo", "categoria": "800.0 (4557) ASSINATURA E ANUIDADES", "conta_dre": "", "tipo": ""}, {"situacao": "Inativo", "categoria": "800.1 FEIRAS E EVENTOS", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Inativo", "categoria": "800.1 APÓLICES E SEGUROS", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Inativo", "categoria": "800.2 INFRAESTRUTURA E HOSTING RESERVA ANTECIPADA", "conta_dre": "", "tipo": ""}, {"situacao": "Inativo", "categoria": "800.3 DEMAIS DESPESAS A APROPRIAR", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.0 (1581) INSS RETIDO", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.1 (1582) ISS RETIDO", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.3 PIS CUMULATIVO", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.4 COFINS CUMULATIVO", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.5 (1546) IRRF RETIDO", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.6 (1580) CRF", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.8 (5092) ICMS DIF. DE ALIQUOTA", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.9 (1545) IRPJ SOBRE LUCRO", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.10 (1553) CSLL SOBRE LUCRO", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.11 COFINS NÃO-CUMULATIVO", "conta_dre": "", "tipo": ""}, {"situacao": "Inativo", "categoria": "900.11 DCTF", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.12 (1543) IPI", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Ativo", "categoria": "900.13 PIS NÃO-CUMULATIVO", "conta_dre": "Outros Tributos", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.0 (5002) ALUGUEL DE CARREGADORES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.1  (5003) REFORMAS E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "11.2  (5004) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "11.3  (5005) REPASSE DE ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Gasto com Energia Elétrica"}, {"situacao": "Inativo", "categoria": "11.5  (5006) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.6  (5007) TREINAMENTOS E DESENVOLVIMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.7  (5008) MATERIAIS DIVERSOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "11.4.0  (5009) DESPESAS COM LOGISTICA: MANUTENÇÃO DE VEÍCULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "11.4.1  (5010) DESPESAS COM LOGISTICA: COMBUSTÍVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.4.2  (5011) DESPESAS COM LOGISTICA: ALUGUEIS DE VEICULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.4.3  (5012) DESPESAS COM LOGISTICA: FRETES", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Frete"}, {"situacao": "Inativo", "categoria": "11.4.4  (5013) DESPESAS COM LOGISTICA: TRANSPORTE URBANO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.4.5  (5014) DESPESAS COM LOGISTICA: ESTACIONAMENTO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.4.6  (5015) TAXAS E CONTRIBUIÇÕES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.4.7  (5016) DESPESAS COM ALUGUEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "11.4.8  (5017) DESPESAS COM ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "11.4.9  (5018) DESPESAS COM LOGISTICA: PEDÁGIO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.0  (5020) REFORMAS E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "12.1  (5021) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "12.2  (5022) MATERIAIS DIVERSOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "12.3  (5023) REPASSE DE ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Gasto com Energia Elétrica"}, {"situacao": "Inativo", "categoria": "12.5  (5024) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.6  (5025) TREINAMENTOS E DESENVOLVIMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.7  (5026) CESSÃO DE ESPAÇO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.8 (5033) TAXAS E CONTRIBUIÇÕES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.9 (5034) DESPESAS COM ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.10 (5037) DESPESAS COM ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "12.11 LOCAÇÃO DE MÁQUINAS E EQUIPAMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.12 (5035) DESPESAS COM ALUGUEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.13 ÁGUA E ESGOTO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.14 TELEFONIA E INTERNET", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.4.0  (5027) DESPESAS COM LOGISTICA: MANUTENÇÃO DE VEÍCULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "12.4.1 (5028) DESPESAS COM LOGISTICA: COMBUSTÍVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.4.2 (5029) DESPESAS COM LOGISTICA: ALUGUEIS DE VEICULOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.4.3 (5030) DESPESAS COM LOGISTICA: FRETES", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Frete"}, {"situacao": "Inativo", "categoria": "12.4.4 (5031) DESPESAS COM LOGISTICA: TRANSPORTE URBANO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.4.5 (5032) DESPESAS COM LOGISTICA: ESTACIONAMENTO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.4.6 (5036) DESPESAS COM LOGISTICA: PEDÁGIOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "12.4.7 DESPESAS COM LOGISTICA: HOSPEDAGEM", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1000.0 (1634) SALÁRIOS E ORDENADOS", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.1 (1635) PRÓ-LABORE", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.2 (4337) PLANO DE SAUDE", "conta_dre": "Despesas com Pessoal", "tipo": "Gasto com Plano de Saúde"}, {"situacao": "Ativo", "categoria": "1000.3 (1634) ESTAGIÁRIO", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.4 (313) FÉRIAS", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Inativo", "categoria": "1000.5 (314) 13º SALÁRIO", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.6 (4856) RESCISÕES", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.7 (1637) PENSÃO", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.8 (1659) INSS", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.9 (1660) FGTS", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.10 (1544) IRRF", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.11 (1659) INSS AUTONOMO", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.12 (4342) VALE ALIMENTAÇÃO", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.13 (4351) VALE TRANSPORTE", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.14 (4339) SEGURO DE VIDA", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.15 (4337) DESPESAS MÉDICAS", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1000.16 (4330) DESPESAS COM BRINDES, PRÊMIOS E BONIFICAÇÕES", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Inativo", "categoria": "1000.17 BENEFÍCIO SAÚDE", "conta_dre": "Despesas com Pessoal", "tipo": ""}, {"situacao": "Ativo", "categoria": "1100.0 (5057) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "1100.1 (ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1100.2 (5060) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "1100.3 (5058) MATERIAIS PARA MANUTENÇÃO E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1100.4 (5431) LOGISTICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1100.5 (5068) OUTROS CUSTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1100.6 (5060) ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1100.7 (5430) HOSPEDAGEM", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.0 (5021) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.1 (5020) MATERIAIS PARA MANUTENÇÃO E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1200.2 (5035) ALUGUEL DE IMÓVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.3 (5024) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.4 (5432) ENERGIA ELÉTRICAS - ROAMING", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.5 (5034) ENERGIA ELÉTRICA - ELETROPOSTOS EZVOLT", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.6 (5037) ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.7 (5328) ÁGUA E ESGOTO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.8 (5023) REPASSE DE ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.9 (5405) LOGÍSTICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1200.10 (5346) TELEFONIA E INTERNET", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.11 (5376) ALUGUEL DE CARREGADORES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.12 (5030) HOSPEDAGEM", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1200.13 (5415) OUTROS CUSTOS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "1300.0 (5040) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "1300.1 (5039) MATERIAIS PARA MANUTENÇÃO E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1300.2 (5042) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1300.3 (5046) LOGÍSTICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1300.4 (5051) HOSPEDAGEM", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1300.5 (5050) OUTROS CUSTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "1300.6 LOGÍSTICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1300.6 (5052) ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1300.7 (5053) LOCAÇÃO DE EQUIPAMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1400.0 (5075) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "", "tipo": ""}, {"situacao": "Inativo", "categoria": "1400.1 MATERIAIS PARA MANUTENÇÃO E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1400.2 (5077) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1400.3 (5085) LOGÍSTICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1400.4 (5436) HOSPEDAGEM", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1400.5 (5086) OUTROS CUSTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1400.6 (5088) ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1500.0 (5395) ALUGUEL DE CARREGADORES", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "1500.1 (5387) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "1500.2 ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1500.3 (5390) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1500.4 (5391) MATERIAIS PARA MANUTENÇÃO E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1500.5 (5396) LOGÍSTICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1500.6 (5392) OUTROS CUSTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1500.7 (5393) ALUGUEL DE IMÓVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1500.8 (5394) ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.0 (5004) SERVIÇOS PRESTADOS POR TERCEIROS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.1 (5003) MATERIAIS PARA MANUTENÇÃO E ADEQUAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1600.2 (5005) REPASSE DE ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.3 (5006) SOFTWARES", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.4 (5015) OUTROS CUSTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.5 (5434) ENERGIA ELÉTRICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.6 (5017) ALIMENTAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Inativo", "categoria": "1600.7 LOCAÇÃO DE EQUIPAMENTOS", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.8 (5016) ALUGUEL DE IMÓVEL", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.9 (5435) ÁGUA E ESGOTO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.10 (5436) TELEFONIA E INTERNET", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.11 (5010) LOGÍSTICA", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1600.12 (5014) HOSPEDAGEM", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1700.0 (5094) INFRAESTRUTURA E HOSTING", "conta_dre": "Outros Custos", "tipo": ""}, {"situacao": "Inativo", "categoria": "18.6.1 (5108) MATERIAL DE HIGIENE E LIMPEZA", "conta_dre": "Despesas Administrativas", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "18.6.2 (5109) COPA E COZINHA", "conta_dre": "Despesas Administrativas", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1800.0 (5095) ALUGUEL", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "1800.1 (5096) CONDOMINIO", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "1800.2 (5097) ÁGUA E ESGOTO", "conta_dre": "Despesas Administrativas", "tipo": "Gasto com Água, Esgoto e Saneamento"}, {"situacao": "Ativo", "categoria": "1800.3 (5098) ENERGIA ELÉTRICA", "conta_dre": "Despesas Administrativas", "tipo": "Gasto com Energia Elétrica"}, {"situacao": "Ativo", "categoria": "1800.4 (5099) TELEFONIA E INTERNET", "conta_dre": "Despesas Administrativas", "tipo": "Gasto com Telefone, Celular e Internet"}, {"situacao": "Ativo", "categoria": "1800.5 (5100) MATERIAL DE ESCRITÓRIO", "conta_dre": "Despesas Administrativas", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1800.7 (5101) SEGURO PARA OPERAÇÃO DA EMPRESA", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "1800.8 (5102) IPTU", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "1800.9 (5103) IPVA", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Inativo", "categoria": "18.12.1 (5114) DESPESAS DE VIAGEM: PEDÁGIOS", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Inativo", "categoria": "18.14.1 (5124) DESPESAS COM LOGISTICA: COMBUSTÍVEL", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Inativo", "categoria": "18.14.2 (5125) DESPESAS COM LOGISTICA: ALUGUEIS DE VEICULOS", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Inativo", "categoria": "18.14.3 (5126) DESPESAS COM LOGISTICA: FRETES", "conta_dre": "Despesas Administrativas", "tipo": "Frete"}, {"situacao": "Inativo", "categoria": "18.14.4 (5127) DESPESAS COM LOGISTICA: TRANSPORTE URBANO", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Inativo", "categoria": "18.14.5 (5128) DESPESAS COM LOGISTICA: ESTACIONAMENTO", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Inativo", "categoria": "18.14.9 (5129) DESPESAS COM LOGISTICA: PEDÁGIOS", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "1800.10 (5104) TAXAS DIVERSAS", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "1800.11 (5105) UNIFORME E EPI", "conta_dre": "Despesas Administrativas", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1800.14 (5123) DESPESAS COM LOGISTICA", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1800.15 (5106) SOFTWARES", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1800.16 (5130) TREINAMENTOS E DESENVOLVIMENTOS", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1800.17 (5330) SEGURO DE IMOVEL", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "1800.18 (5437) REFORMAS E ADEQUAÇÃO", "conta_dre": "Despesas Variáveis", "tipo": "Compra de Matéria Prima"}, {"situacao": "Ativo", "categoria": "1800.19 (5110) DESPESAS COM EVENTOS E CONFRATERNIZAÇÕES", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1800.20 (5111) DESPESAS COM TECNOLOGIA DA INFORMAÇÃO", "conta_dre": "Custo dos Serviços Prestados", "tipo": ""}, {"situacao": "Ativo", "categoria": "1800.21 (5112) DESPESAS COM FERRAMENTAS E EQUIPAMENTOS DE OPERAÇÃO", "conta_dre": "Despesas Administrativas", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1800.22 (5107) INSUMOS", "conta_dre": "Despesas Administrativas", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Inativo", "categoria": "1800.12.0 (5113) DESPESAS DE VIAGEM: VIAGENS E HOSPEDAGENS", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Inativo", "categoria": "1800.12.2 (5115) DESPESAS DE VIAGEM: REFEIÇÃO E ALIMENTAÇÃO", "conta_dre": "Despesas Administrativas", "tipo": "Compra de Material para Uso e Consumo"}, {"situacao": "Ativo", "categoria": "1800.13.0 (5117) SERVIÇOS PRESTADOS: POR TERCEIROS", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1800.13.1 (5118) SERVIÇOS PRESTADOS: SERVIÇOS DE GESTÃO ESTRATÉGICA", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1800.13.2 (5119) SERVIÇOS PRESTADOS: SERVIÇOS ADMINISTRATIVOS", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1800.13.3 (5120) SERVIÇOS PRESTADOS: ASSESSORIA JURÍDICA", "conta_dre": "Despesas Administrativas", "tipo": "Serviço Tomado"}, {"situacao": "Ativo", "categoria": "1800.13.4 (5121) SERVIÇOS PRESTADOS: ASSISTÊNCIA CONTÁBIL", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Inativo", "categoria": "19.2.1 (5144) DESPESAS DE VIAGEM: PEDÁGIOS", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Inativo", "categoria": "19.3.4 DESPESAS DE VIAGEM: TRANSPORTE URBANO", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.0 (5135) GESTÃO COMERCIAL E VENDAS", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.1 (5138) MÍDIA PAGA", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.2 (5133) SERVIÇOS PRESTADOS: POR TERCEIROS", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.3 (5134) SERVIÇOS PRESTADOS: AGÊNCIA DE MARKETING", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.4 (5139) SOFTWARES", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.5 (5143) DESPESAS DE VIAGEM: VIAGENS E HOSPEDAGENS", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.6 (5145) DESPESAS DE VIAGEM: REFEIÇÃO E ALIMENTAÇÃO", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.7 (5141) TREINAMENTOS E DESENVOLVIMENTOS", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.8 (5140) DESPESAS COM BRINDES", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.9 (5137) FEIRAS E EVENTOS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "1900.10 (5438) OUTRAS DESPESAS COM MARKETING", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Inativo", "categoria": "Comissões", "conta_dre": "Despesas de Vendas e Marketing", "tipo": ""}, {"situacao": "Ativo", "categoria": "2000.0 (5148) SERVIÇOS PRESTADOS: POR TERCEIROS", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "2000.1 (5151) SOFTWARES", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "2000.2 (5149) TREINAMENTOS E DESENVOLVIMENTOS", "conta_dre": "Despesas Administrativas", "tipo": ""}, {"situacao": "Ativo", "categoria": "2000.3 (5332) MATERIAIS DIVERSOS", "conta_dre": "Despesas Administrativas", "tipo": "Compra de Matéria Prima"}, {"situacao": "Ativo", "categoria": "2100.0 (4971) TARIFA BANCARIA", "conta_dre": "Despesas Financeiras", "tipo": ""}, {"situacao": "Ativo", "categoria": "2100.1 (4982) IOF", "conta_dre": "Despesas Financeiras", "tipo": ""}, {"situacao": "Ativo", "categoria": "2100.2 (5152) JUROS PASSIVOS", "conta_dre": "Despesas Financeiras", "tipo": ""}, {"situacao": "Ativo", "categoria": "2100.3 (5153) JUROS DE MORA", "conta_dre": "Despesas Financeiras", "tipo": ""}, {"situacao": "Ativo", "categoria": "2100.4 (5154) TARIFA DE CARTÕES DE CRÉDITO", "conta_dre": "Despesas Financeiras", "tipo": ""}, {"situacao": "Ativo", "categoria": "2100.5 QUITAÇÃO DE EMPRÉSTIMOS", "conta_dre": "Despesas Financeiras", "tipo": ""}, {"situacao": "Inativo", "categoria": "2100.6 INVESTIMENTO", "conta_dre": "Despesas Financeiras", "tipo": ""}, {"situacao": "Inativo", "categoria": "2200.1 CÂMBIO", "conta_dre": "Ativos", "tipo": ""}, {"situacao": "Ativo", "categoria": "2200.2 (291) SERVIÇOS DE FRETE", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "2200.3 (291) SERVIÇO DE ARMAZENAGEM", "conta_dre": "Serviços", "tipo": ""}, {"situacao": "Ativo", "categoria": "2200.4 (291) GERENCIAMENTO DE IMPORTAÇÃO", "conta_dre": "Serviços", "tipo": ""}, {"situacao": "Ativo", "categoria": "2200.5 (291) ASSESSORIA ADUANEIRA", "conta_dre": "Serviços", "tipo": ""}, {"situacao": "Ativo", "categoria": "2300.1 (5341) OUTRAS DESPESAS NAO OPERACIONAIS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "2300.2 (4539) DOAÇÃO", "conta_dre": "Despesas Variáveis", "tipo": ""}, {"situacao": "Ativo", "categoria": "700.0 (5194) ADIANTAMENTO FORNECEDORES - SERVIÇOS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "700.1 (288) ADIANTAMENTO FORNECEDORES - MATERIAL", "conta_dre": "", "tipo": ""}, {"situacao": "Inativo", "categoria": "700.2 ADIANTAMENTO DE CARTÃO DE CRÉDITO", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "700.2 (312) ADIANTAMENTO DE SALÁRIO", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "700.3 (314) ADIANTAMENTO DE 13º SALÁRIO", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "700.4 (313) ADIANTAMENTO DE FÉRIAS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "700.5 (5194) ADIANTAMENTO DE AUTONOMOS", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "700.6 (338) EMPRÉSTIMOS A COLABORADORES", "conta_dre": "", "tipo": ""}, {"situacao": "Inativo", "categoria": "700.7 ADIANTAMENTO DE VIAGEM", "conta_dre": "", "tipo": ""}, {"situacao": "Ativo", "categoria": "700.7 (5351) DEPÓSITO CAUÇÃO", "conta_dre": "", "tipo": ""}];
+
+const LINHAS_NEGOCIO = ['Recarga B2C','Recarga B2B','E-BUS','Chargers as a Service','O&M','Software','Geral/Overhead'];
+const TIPOS_MOVIMENTO = ['receita','despesa','transferencia'];
+
+let state = {
+  lancamentos: [],      // all transactions
+  memoria: {},          // learning memory
+  regras: [],           // keyword rules
+  fixos: [],            // recurring entries
+  contas: [
+    {id:'bradesco',nome:'Banco Bradesco',tipo:'Conta Corrente',saldo_inicial:0,data_inicio:'',ativo:true},
+    {id:'xp',nome:'XP Investimentos',tipo:'Conta Investimento',saldo_inicial:0,data_inicio:'',ativo:true},
+    {id:'aplicacoes',nome:'Aplicações',tipo:'Aplicação Financeira',saldo_inicial:0,data_inicio:'',ativo:true},
+  ],
+  showSomentePendentes: false,
+};
+
+// ============================================================
+// PERSISTENCE
+// ============================================================
+function saveState(){
+  try{localStorage.setItem('ezvolt_state', JSON.stringify(state));}catch(e){}
+}
+function loadState(){
+  try{
+    const s = localStorage.getItem('ezvolt_state');
+    if(s){
+      const parsed = JSON.parse(s);
+      state = {...state, ...parsed};
+    }
+  }catch(e){}
+}
+loadState();
+
+// ============================================================
+// UTILS
+// ============================================================
+function fmtBRL(v){
+  if(v===undefined||v===null)return'R$ 0,00';
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+}
+function fmtBRLShort(v){
+  const abs=Math.abs(v);
+  if(abs>=1e6)return(v/1e6).toFixed(1)+'M';
+  if(abs>=1e3)return(v/1e3).toFixed(1)+'K';
+  return fmtBRL(v);
+}
+function excelDateToJS(serial){
+  // Excel date serial to JS Date
+  if(!serial||isNaN(serial))return null;
+  const d = new Date(Math.round((Number(serial)-25569)*86400*1000));
+  return d;
+}
+function fmtDate(d){
+  if(!d)return'';
+  const dt = d instanceof Date ? d : new Date(d);
+  if(isNaN(dt))return d;
+  return dt.toLocaleDateString('pt-BR');
+}
+function parseBRNumber(s){
+  if(!s&&s!==0)return null;
+  if(typeof s==='number')return s;
+  s = String(s).trim().replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.');
+  const n=parseFloat(s);
+  return isNaN(n)?null:n;
+}
+function normalizeDesc(s){
+  return s.toUpperCase().replace(/\s+/g,' ').trim()
+    .replace(/\d{2}\/\d{2}/g,'')   // remove dates
+    .replace(/\d{2}:\d{2}/g,'')   // remove times
+    .replace(/\s+/g,' ').trim();
+}
+function genId(){
+  return Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+}
+function getMesAno(dt){
+  if(!dt)return'';
+  const d=dt instanceof Date?dt:new Date(dt);
+  if(isNaN(d))return'';
+  return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+function getMesNome(dt){
+  if(!dt)return'';
+  const d=dt instanceof Date?dt:new Date(dt);
+  if(isNaN(d))return'';
+  return d.toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).replace('. de ',' ').replace('.','/');
+}
+
+// ============================================================
+// PLANO DE CONTAS HELPERS
+// ============================================================
+const planoAtivos = PLANO_CONTAS.filter(p=>p.situacao==='Ativo');
+const planoInativos = PLANO_CONTAS.filter(p=>p.situacao==='Inativo');
+const planoCategorias = planoAtivos.map(p=>p.categoria);
+const planoMap = {};
+PLANO_CONTAS.forEach(p=>{planoMap[p.categoria]=p;});
+
+function getContaDRE(cat){return (planoMap[cat]||{}).conta_dre||'';}
+function getTipoGasto(cat){return (planoMap[cat]||{}).tipo||'';}
+
+function buildCatOptions(selected){
+  let h='<option value="">-- Selecionar --</option>';
+  // Group by DRE
+  const groups={};
+  planoAtivos.forEach(p=>{
+    const g=p.conta_dre||'Outros';
+    if(!groups[g])groups[g]=[];
+    groups[g].push(p.categoria);
+  });
+  Object.keys(groups).sort().forEach(g=>{
+    h+=`<optgroup label="${g}">`;
+    groups[g].forEach(c=>{
+      h+=`<option value="${c.replace(/"/g,'&quot;')}"${c===selected?' selected':''}>${c}</option>`;
+    });
+    h+=`</optgroup>`;
+  });
+  return h;
+}
+
+function buildContasOptions(selected){
+  return state.contas.filter(c=>c.ativo).map(c=>`<option value="${c.id}"${c.id===selected?' selected':''}>${c.nome}</option>`).join('');
+}
+
+// ============================================================
+// FILE PARSING
+// ============================================================
+function handleFileSelect(evt){
+  const file=evt.target.files[0];
+  if(!file)return;
+  parseFile(file);
+}
+
+// Drag & Drop
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];
+  if(f)parseFile(f);
+});
+
+function parseFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='xlsx'||ext==='xls'){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const wb=XLSX.read(e.target.result,{type:'binary',cellDates:false});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+      processOmieRows(rows, file.name);
+    };
+    reader.readAsBinaryString(file);
+  } else {
+    const reader=new FileReader();
+    reader.onload=e=>parseCSVText(e.target.result, file.name);
+    // Try latin-1 first (Bradesco native CSV), then utf-8
+    reader.readAsText(file,'iso-8859-1');
+  }
+}
+
+function processOmieRows(rows, fname){
+  // Detect header row
+  let headerIdx=0;
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    if(r&&r.length>1&&String(r[0]).includes('Data')){headerIdx=i;break;}
+    if(r&&r.length>1&&(typeof r[0]==='number'&&r[0]>40000&&r[0]<60000)){headerIdx=i-1;break;}
+  }
+  
+  const header=rows[headerIdx];
+  const dataIdx=header.findIndex(h=>String(h||'').toLowerCase().includes('data'));
+  const lancIdx=header.findIndex(h=>String(h||'').toLowerCase().includes('lançamento')||String(h||'').toLowerCase().includes('lancamento'));
+  const credIdx=header.findIndex(h=>String(h||'').toLowerCase().includes('crédito')||String(h||'').toLowerCase().includes('credito'));
+  const debIdx=header.findIndex(h=>String(h||'').toLowerCase().includes('débito')||String(h||'').toLowerCase().includes('debito'));
+  const catIdx=header.findIndex(h=>String(h||'').toLowerCase().includes('categoria'));
+  
+  let novos=0,duplicados=0,ignorados=0;
+  const existing=new Set(state.lancamentos.map(l=>`${l.data_str}|${l.desc_original}|${l.valor}`));
+  
+  const newLancs=[];
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const r=rows[i];
+    if(!r||!r[0])continue;
+    const rawDate=r[dataIdx>=0?dataIdx:0];
+    if(typeof rawDate==='string'&&(rawDate.toLowerCase().includes('total')||rawDate.toLowerCase().includes('saldo')))continue;
+    
+    let dt=null;
+    if(typeof rawDate==='number'){dt=excelDateToJS(rawDate);}
+    else if(typeof rawDate==='string'){
+      const parts=rawDate.split('/');
+      if(parts.length===3)dt=new Date(parts[2],parts[1]-1,parts[0]);
+    }
+    if(!dt||isNaN(dt))continue;
+    
+    const desc=String(r[lancIdx>=0?lancIdx:1]||'').trim();
+    if(!desc)continue;
+    
+    const credRaw=credIdx>=0?r[credIdx]:'';
+    const debRaw=debIdx>=0?r[debIdx]:'';
+    const cred=parseBRNumber(credRaw)||0;
+    const deb=parseBRNumber(debRaw)||0;
+    
+    if(cred===0&&deb===0)continue;
+    
+    const valor=cred>0?cred:-deb;
+    const tipo_mov=cred>0?'receita':'despesa';
+    const data_str=dt.toISOString().split('T')[0];
+    const key=`${data_str}|${desc}|${Math.abs(valor)}`;
+    
+    if(existing.has(key)){duplicados++;continue;}
+    
+    const catOmie=catIdx>=0?String(r[catIdx]||''):'';
+    const desc_norm=normalizeDesc(desc);
+    
+    // Try to classify
+    let cat='',conta_dre='',tipo_gasto='',linha_neg='',recorrente='',fonte='nao_classificado',isTransf=false,contaDest='';
+    
+    // Check if has Omie category
+    if(catOmie&&planoMap[catOmie]){
+      cat=catOmie;conta_dre=getContaDRE(cat);tipo_gasto=getTipoGasto(cat);fonte='importado';
+    } else {
+      // Try memory
+      const memKey=desc_norm;
+      if(state.memoria[memKey]){
+        const m=state.memoria[memKey];
+        cat=m.categoria||'';conta_dre=m.conta_dre||'';tipo_gasto=m.tipo_gasto||'';
+        linha_neg=m.linha_neg||'';recorrente=m.recorrente||'';isTransf=m.is_transferencia||false;
+        contaDest=m.conta_destino||'';fonte='memoria';
+      } else {
+        // Try rules
+        const rule=matchRule(desc_norm,valor,tipo_mov);
+        if(rule){
+          cat=rule.categoria||'';conta_dre=getContaDRE(cat);tipo_gasto=getTipoGasto(cat);
+          linha_neg=rule.linha_neg||'';recorrente=rule.recorrente||'';
+          isTransf=rule.tipo==='transferencia';contaDest=rule.conta_destino||'';
+          if(isTransf)tipo_mov='transferencia';fonte='regra';
+        }
+      }
+    }
+    
+    // Override type for transfers
+    const tipo_final=isTransf?'transferencia':tipo_mov;
+    
+    newLancs.push({
+      id:genId(),
+      data:dt.toISOString(),data_str,
+      ano:dt.getFullYear(),mes:dt.getMonth()+1,
+      mes_ano:getMesAno(dt),
+      desc_original:desc,desc_norm,
+      valor:Math.abs(valor),
+      tipo_mov:tipo_final,
+      conta:'bradesco',
+      categoria:cat,
+      conta_dre,tipo_gasto,
+      linha_neg,recorrente,
+      is_transferencia:isTransf,
+      conta_origem:'bradesco',
+      conta_destino:contaDest,
+      status:cat?'classificado':'pendente',
+      fonte,
+      observacao:'',
+      cred_raw:cred||null,
+      deb_raw:deb||null,
+    });
+    novos++;
+    existing.add(key);
+  }
+  
+  state.lancamentos=[...state.lancamentos,...newLancs];
+  saveState();
+  showImportSummary(fname,rows.length-headerIdx-1,novos,duplicados,ignorados,newLancs);
+}
+
+function parseCSVText(text, fname){
+  // Bradesco CSV: sections separated by \r\n, rows by \r, cols by ;
+  const allRows = [];
+  const headerRow = ['Data','Lancamento','Dcto.','Credito','Debito','Saldo'];
+  
+  // Try Bradesco multi-section format first
+  const sections = text.split('\r\n');
+  for (const section of sections) {
+    const rows = section.split('\r');
+    for (const row of rows) {
+      const cols = row.split(';');
+      if (cols.length >= 4 && /^\d{2}\/\d{2}\/\d{4}/.test(cols[0].trim())) {
+        allRows.push(cols);
+      }
+    }
+  }
+  
+  if (!allRows.length) {
+    // Fallback: simple line split
+    const lines = text.split(/[\r\n]+/);
+    lines.forEach(l => {
+      const cols = l.split(';');
+      if (cols.length >= 4 && /^\d{2}\/\d{2}\/\d{4}/.test(cols[0].trim())) allRows.push(cols);
+    });
+  }
+  
+  if (!allRows.length) {
+    showToast('Nenhuma linha válida encontrada no arquivo. Verifique o formato.', 'error');
+    return;
+  }
+  
+  processBradescoRows(allRows, fname);
+}
+
+function processBradescoRows(rows, fname) {
+  let novos=0, duplicados=0;
+  const existing = new Set(state.lancamentos.map(l=>`${l.data_str}|${l.desc_original}|${l.valor}`));
+  const newLancs = [];
+  
+  for (const cols of rows) {
+    const rawDate = cols[0].trim();
+    const desc = (cols[1]||'').trim();
+    const credRaw = (cols[3]||'').trim();
+    const debRaw = (cols[4]||'').trim();
+    
+    if (!rawDate || !desc) continue;
+    if (desc === 'SALDO ANTERIOR' || desc.toLowerCase().includes('total')) continue;
+    
+    // Parse date DD/MM/YYYY
+    const parts = rawDate.split('/');
+    if (parts.length !== 3) continue;
+    const dt = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+    if (isNaN(dt)) continue;
+    
+    const cred = parseBRNumber(credRaw) || 0;
+    const deb = parseBRNumber(debRaw) || 0;
+    if (cred === 0 && deb === 0) continue;
+    
+    const valor = Math.abs(cred > 0 ? cred : deb);
+    const tipo_mov = cred > 0 ? 'receita' : 'despesa';
+    const data_str = dt.toISOString().split('T')[0];
+    const key = `${data_str}|${desc}|${valor}`;
+    
+    if (existing.has(key)) { duplicados++; continue; }
+    
+    const desc_norm = normalizeDesc(desc);
+    let cat='', conta_dre='', tipo_gasto='', linha_neg='', recorrente='', fonte='nao_classificado', isTransf=false, contaDest='';
+    
+    // Memory
+    if (state.memoria[desc_norm]) {
+      const m = state.memoria[desc_norm];
+      cat=m.categoria||''; conta_dre=m.conta_dre||''; tipo_gasto=m.tipo_gasto||'';
+      linha_neg=m.linha_neg||''; recorrente=m.recorrente||''; isTransf=m.is_transferencia||false;
+      contaDest=m.conta_destino||''; fonte='memoria';
+    } else {
+      const rule = matchRule(desc_norm, valor, tipo_mov);
+      if (rule) {
+        cat=rule.categoria||''; conta_dre=getContaDRE(cat); tipo_gasto=getTipoGasto(cat);
+        linha_neg=rule.linha_neg||''; recorrente=rule.recorrente||'';
+        isTransf=rule.tipo==='transferencia'; contaDest=rule.conta_destino||'';
+        if (isTransf) tipo_mov_final='transferencia'; fonte='regra';
+      }
+    }
+    const tipo_final = isTransf ? 'transferencia' : tipo_mov;
+    
+    newLancs.push({
+      id:genId(), data:dt.toISOString(), data_str,
+      ano:dt.getFullYear(), mes:dt.getMonth()+1, mes_ano:getMesAno(dt),
+      desc_original:desc, desc_norm, valor, tipo_mov:tipo_final,
+      conta:'bradesco', categoria:cat, conta_dre, tipo_gasto,
+      linha_neg, recorrente, is_transferencia:isTransf,
+      conta_origem:'bradesco', conta_destino:contaDest,
+      status:cat?'classificado':'pendente', fonte, observacao:'',
+      cred_raw:cred||null, deb_raw:deb||null,
+    });
+    novos++;
+    existing.add(key);
+  }
+  
+  state.lancamentos = [...state.lancamentos, ...newLancs];
+  saveState();
+  showImportSummary(fname, rows.length, novos, duplicados, 0, newLancs);
+}
+
+function parsePasteText(){
+  const text=document.getElementById('pasteArea').value;
+  if(!text.trim())return;
+  parseCSVText(text,'colado');
+}
+
+function matchRule(desc, valor, tipo){
+  for(const r of [...state.fixos,...state.regras].filter(x=>x.ativo)){
+    const kws=(r.palavras||r.palavra||'').split(/[,;]/).map(k=>k.trim().toUpperCase()).filter(Boolean);
+    const cond=r.condicao||'contem';
+    const matched=kws.some(kw=>{
+      if(cond==='contem')return desc.includes(kw);
+      if(cond==='comeca')return desc.startsWith(kw);
+      if(cond==='termina')return desc.endsWith(kw);
+      return desc.includes(kw);
+    });
+    if(matched)return r;
+  }
+  return null;
+}
+
+function showImportSummary(fname, total, novos, dup, ign, newLancs){
+  document.getElementById('importFileName').textContent=fname;
+  const pendentes=newLancs.filter(l=>l.status==='pendente').length;
+  const receitas=newLancs.filter(l=>l.tipo_mov==='receita').length;
+  const despesas=newLancs.filter(l=>l.tipo_mov==='despesa').length;
+  const transf=newLancs.filter(l=>l.tipo_mov==='transferencia').length;
+  
+  document.getElementById('importSummary').innerHTML=`
+    <div class="sum-item"><div class="sum-num">${total}</div><div class="sum-label">Linhas lidas</div></div>
+    <div class="sum-item"><div class="sum-num text-volt">${novos}</div><div class="sum-label">Novos</div></div>
+    <div class="sum-item"><div class="sum-num text-muted">${dup}</div><div class="sum-label">Duplicados</div></div>
+    <div class="sum-item"><div class="sum-num text-yellow">${pendentes}</div><div class="sum-label">A classificar</div></div>
+    <div class="sum-item"><div class="sum-num text-volt">${receitas}</div><div class="sum-label">Receitas</div></div>
+    <div class="sum-item"><div class="sum-num text-red">${despesas}</div><div class="sum-label">Despesas</div></div>
+    <div class="sum-item"><div class="sum-num text-blue">${transf}</div><div class="sum-label">Transferências</div></div>
+  `;
+  document.getElementById('importSummaryArea').classList.remove('hidden');
+  updateStepDone();
+}
+
+// ============================================================
+// CLASSIFICATION TABLE
+// ============================================================
+let showPendentes=false;
+
+function togglePendentes(){
+  showPendentes=!showPendentes;
+  document.getElementById('btnSomentePendentes').textContent=showPendentes?'👁 Mostrar Todos':'👁 Somente Pendentes';
+  renderClassifTable();
+}
+
+function renderClassifTable(){
+  const mesF=document.getElementById('filtroMes').value;
+  const tipoF=document.getElementById('filtroTipo').value;
+  const statusF=document.getElementById('filtroStatus').value;
+  const searchF=document.getElementById('filtroSearch').value.toLowerCase();
+  
+  let data=state.lancamentos;
+  if(showPendentes)data=data.filter(l=>l.status==='pendente');
+  if(mesF)data=data.filter(l=>l.mes_ano===mesF);
+  if(tipoF)data=data.filter(l=>l.tipo_mov===tipoF);
+  if(statusF)data=data.filter(l=>l.status===statusF);
+  if(searchF)data=data.filter(l=>(l.desc_original||'').toLowerCase().includes(searchF)||(l.categoria||'').toLowerCase().includes(searchF));
+  
+  const body=document.getElementById('classifBody');
+  const empty=document.getElementById('classifEmpty');
+  
+  if(!data.length){
+    body.innerHTML='';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  
+  const pendTot=data.filter(l=>l.status==='pendente').length;
+  document.getElementById('classifSubtitle').textContent=`${data.length} lançamentos${pendTot>0?' — '+pendTot+' pendentes':''}`;
+  
+  // Sort by date desc
+  data.sort((a,b)=>new Date(b.data)-new Date(a.data));
+  
+  body.innerHTML=data.slice(0,500).map(l=>{
+    const isPend=l.status==='pendente';
+    const isTransf=l.tipo_mov==='transferencia';
+    const rowCls=isTransf?'row-transferencia':isPend?'row-pendente':'row-classificado';
+    const valCls=l.tipo_mov==='receita'?'text-volt':l.tipo_mov==='despesa'?'text-red':'text-blue';
+    const valSign=l.tipo_mov==='receita'?'+':'-';
+    
+    return `<tr class="${rowCls}" data-id="${l.id}">
+      <td>${fmtDate(l.data)}</td>
+      <td class="td-desc" title="${(l.desc_original||'').replace(/"/g,'&quot;')}">${l.desc_original||''}</td>
+      <td class="${valCls} font-mono">${valSign}${fmtBRL(l.valor)}</td>
+      <td>
+        <select class="inline-select" style="width:85px" onchange="updateLanc('${l.id}','tipo_mov',this.value)">
+          <option value="receita"${l.tipo_mov==='receita'?' selected':''}>Receita</option>
+          <option value="despesa"${l.tipo_mov==='despesa'?' selected':''}>Despesa</option>
+          <option value="transferencia"${l.tipo_mov==='transferencia'?' selected':''}>Transf.</option>
+        </select>
+      </td>
+      <td>
+        <select class="inline-select" style="width:175px" onchange="updateLancCat('${l.id}',this.value)">
+          ${buildCatOptions(l.categoria)}
+        </select>
+      </td>
+      <td>
+        <select class="inline-select" style="width:130px" onchange="updateLanc('${l.id}','linha_neg',this.value)">
+          <option value="">--</option>
+          ${LINHAS_NEGOCIO.map(ln=>`<option value="${ln}"${l.linha_neg===ln?' selected':''}>${ln}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <select class="inline-select" style="width:80px" onchange="updateLanc('${l.id}','recorrente',this.value)">
+          <option value="">--</option>
+          <option value="recorrente"${l.recorrente==='recorrente'?' selected':''}>Recorrente</option>
+          <option value="extraordinario"${l.recorrente==='extraordinario'?' selected':''}>Extrao.</option>
+        </select>
+      </td>
+      <td style="text-align:center">
+        <label class="toggle">
+          <input type="checkbox"${isTransf?' checked':''} onchange="updateLanc('${l.id}','is_transferencia',this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td>
+        <select class="inline-select" style="width:125px" onchange="updateLanc('${l.id}','conta_destino',this.value)">
+          <option value="">--</option>
+          ${state.contas.filter(c=>c.ativo).map(c=>`<option value="${c.id}"${l.conta_destino===c.id?' selected':''}>${c.nome}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        ${isPend?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">OK</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateLanc(id, field, value){
+  const l=state.lancamentos.find(x=>x.id===id);
+  if(!l)return;
+  l[field]=value;
+  if(field==='is_transferencia'&&value){l.tipo_mov='transferencia';l.status='classificado';}
+  if(field==='tipo_mov'&&value==='transferencia'){l.is_transferencia=true;}
+  if(l.categoria)l.status='classificado';
+  saveState();
+}
+
+function updateLancCat(id, cat){
+  const l=state.lancamentos.find(x=>x.id===id);
+  if(!l)return;
+  l.categoria=cat;
+  l.conta_dre=getContaDRE(cat);
+  l.tipo_gasto=getTipoGasto(cat);
+  l.status=cat?'classificado':'pendente';
+  saveState();
+}
+
+function autoClassificarTodos(){
+  let count=0;
+  state.lancamentos.forEach(l=>{
+    if(l.status==='classificado')return;
+    const rule=matchRule(l.desc_norm||normalizeDesc(l.desc_original||''),l.valor,l.tipo_mov);
+    if(rule){
+      l.categoria=rule.categoria||l.categoria;
+      l.conta_dre=getContaDRE(l.categoria);
+      l.tipo_gasto=getTipoGasto(l.categoria);
+      l.linha_neg=rule.linha_neg||l.linha_neg;
+      l.recorrente=rule.recorrente||l.recorrente;
+      if(rule.tipo==='transferencia'){l.tipo_mov='transferencia';l.is_transferencia=true;}
+      if(l.categoria)l.status='classificado';
+      count++;
+    }
+    // memory
+    const memKey=l.desc_norm||normalizeDesc(l.desc_original||'');
+    if(state.memoria[memKey]&&l.status==='pendente'){
+      const m=state.memoria[memKey];
+      l.categoria=m.categoria;l.conta_dre=m.conta_dre;l.tipo_gasto=m.tipo_gasto;
+      l.linha_neg=m.linha_neg;l.recorrente=m.recorrente;
+      if(m.is_transferencia){l.tipo_mov='transferencia';l.is_transferencia=true;}
+      l.conta_destino=m.conta_destino;l.fonte='memoria';
+      l.status=l.categoria?'classificado':'pendente';
+      count++;
+    }
+  });
+  saveState();
+  renderClassifTable();
+  showToast(`${count} lançamentos classificados automaticamente`,'success');
+}
+
+function confirmarClassificacoes(){
+  // Learn from classified transactions
+  state.lancamentos.filter(l=>l.status==='classificado').forEach(l=>{
+    const key=l.desc_norm||normalizeDesc(l.desc_original||'');
+    if(!key||!l.categoria)return;
+    const existing=state.memoria[key]||{usos:0};
+    state.memoria[key]={
+      descricao:key,categoria:l.categoria,conta_dre:l.conta_dre,tipo_gasto:l.tipo_gasto,
+      linha_neg:l.linha_neg,recorrente:l.recorrente,is_transferencia:l.is_transferencia,
+      conta_destino:l.conta_destino,ultima_uso:new Date().toISOString(),
+      usos:(existing.usos||0)+1,
+    };
+  });
+  saveState();
+  showToast('Classificações confirmadas e memória atualizada!','success');
+  updatePeriodSelector();
+  renderDashboard();
+}
+
+function populateFiltroMes(){
+  const meses=[...new Set(state.lancamentos.map(l=>l.mes_ano).filter(Boolean))].sort();
+  const sel=document.getElementById('filtroMes');
+  sel.innerHTML='<option value="">Todos os meses</option>'+meses.map(m=>`<option value="${m}">${m}</option>`).join('');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function updatePeriodSelector(){
+  const anos=[...new Set(state.lancamentos.map(l=>l.ano).filter(Boolean))].sort();
+  const meses=[...new Set(state.lancamentos.map(l=>l.mes_ano).filter(Boolean))].sort();
+  const sel=document.getElementById('dashPeriod');
+  const cur=sel.value;
+  sel.innerHTML=`<option value="all">Tudo</option>`;
+  anos.forEach(a=>{sel.innerHTML+=`<option value="ano_${a}">Acumulado ${a}</option>`;});
+  meses.forEach(m=>{
+    const [mo,yr]=m.split('/');
+    const d=new Date(yr,mo-1,1);
+    const lbl=d.toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).replace('. de ',' ');
+    sel.innerHTML+=`<option value="mes_${m}">${lbl}</option>`;
+  });
+  if(cur)sel.value=cur;
+}
+
+function filterByPeriod(period){
+  if(!period||period==='all')return state.lancamentos;
+  if(period.startsWith('ano_')){
+    const yr=parseInt(period.slice(4));
+    return state.lancamentos.filter(l=>l.ano===yr);
+  }
+  if(period.startsWith('mes_')){
+    const ma=period.slice(4);
+    return state.lancamentos.filter(l=>l.mes_ano===ma);
+  }
+  return state.lancamentos;
+}
+
+function renderDashboard(){
+  const period=document.getElementById('dashPeriod').value||'all';
+  const data=filterByPeriod(period);
+  
+  const receitas=data.filter(l=>l.tipo_mov==='receita');
+  const despesas=data.filter(l=>l.tipo_mov==='despesa');
+  const transf=data.filter(l=>l.tipo_mov==='transferencia');
+  
+  const totRec=receitas.reduce((s,l)=>s+l.valor,0);
+  const totDesp=despesas.reduce((s,l)=>s+l.valor,0);
+  const resultado=totRec-totDesp;
+  
+  // KPIs
+  document.getElementById('kpiReceita').textContent=fmtBRL(totRec);
+  document.getElementById('kpiDespesa').textContent=fmtBRL(totDesp);
+  document.getElementById('kpiResultado').textContent=fmtBRL(resultado);
+  document.getElementById('kpiResultado').className='kpi-value '+(resultado>=0?'green':'red');
+  document.getElementById('kpiResultadoSub').textContent=resultado>=0?'Lucro':'Prejuízo';
+  
+  // Caixa
+  let caixaTotal=0;
+  state.contas.filter(c=>c.ativo).forEach(c=>{
+    const si=parseBRNumber(c.saldo_inicial)||0;
+    const entradas=receitas.filter(l=>l.conta===c.id).reduce((s,l)=>s+l.valor,0);
+    const saidas=despesas.filter(l=>l.conta===c.id).reduce((s,l)=>s+l.valor,0);
+    const tRec=transf.filter(l=>l.conta_destino===c.id).reduce((s,l)=>s+l.valor,0);
+    const tEnv=transf.filter(l=>l.conta_origem===c.id).reduce((s,l)=>s+l.valor,0);
+    caixaTotal+=si+entradas-saidas+tRec-tEnv;
+  });
+  document.getElementById('kpiCaixa').textContent=fmtBRL(caixaTotal);
+  document.getElementById('kpiCaixaSub').textContent=`${state.contas.filter(c=>c.ativo).length} contas`;
+  
+  const recRec=receitas.filter(l=>l.recorrente==='recorrente').reduce((s,l)=>s+l.valor,0);
+  document.getElementById('kpiReceitaSub').textContent=totRec>0?`${Math.round(recRec/totRec*100)}% recorrente`:'';
+  
+  // Top 5 Receitas
+  renderTopBars('topReceitas',receitas,'categoria',5,'volt');
+  renderTopBars('topDespesas',despesas,'categoria',5,'red');
+  renderTopBars('receitaLinhaNeg',receitas,'linha_neg',10,'volt');
+  renderTopBars('despesaLinhaNeg',despesas,'linha_neg',10,'orange');
+  
+  // Recorrente
+  renderRecorr('recorrReceita',receitas);
+  renderRecorr('recorrDespesa',despesas);
+  
+  // Evolução
+  renderEvolucao(data);
+  
+  // DRE
+  renderDRE(data);
+  
+  // Caixa por Conta
+  renderCaixaConta(data);
+  
+  // Transferencias
+  renderTransferencias(transf);
+  
+  // Header period
+  document.getElementById('headerPeriod').textContent=period==='all'?'Todos os períodos':period.startsWith('ano_')?'Acumulado '+period.slice(4):period.slice(4);
+}
+
+function renderTopBars(elId, data, field, n, color){
+  const groups={};
+  data.forEach(l=>{const k=l[field]||'Sem categoria';groups[k]=(groups[k]||0)+l.valor;});
+  const sorted=Object.entries(groups).sort((a,b)=>b[1]-a[1]).slice(0,n);
+  const max=sorted[0]?.[1]||1;
+  const colorMap={volt:'var(--volt)',red:'var(--red)',orange:'var(--orange)',blue:'var(--blue)'};
+  const c=colorMap[color]||'var(--volt)';
+  if(!sorted.length){document.getElementById(elId).innerHTML='<div class="text-muted text-sm" style="padding:.5rem">Sem dados</div>';return;}
+  document.getElementById(elId).innerHTML=sorted.map(([k,v])=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${k}">${k||'—'}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,v/max*100)}%;background:${c}"></div></div>
+      <div class="bar-val">${fmtBRLShort(v)}</div>
+    </div>`).join('');
+}
+
+function renderRecorr(elId, data){
+  const recorrente=data.filter(l=>l.recorrente==='recorrente').reduce((s,l)=>s+l.valor,0);
+  const extrao=data.filter(l=>l.recorrente==='extraordinario').reduce((s,l)=>s+l.valor,0);
+  const sem=data.filter(l=>!l.recorrente).reduce((s,l)=>s+l.valor,0);
+  const tot=recorrente+extrao+sem||1;
+  document.getElementById(elId).innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:.5rem">
+      <div class="bar-row"><div class="bar-label">Recorrente</div><div class="bar-track"><div class="bar-fill" style="width:${recorrente/tot*100}%;background:var(--volt)"></div></div><div class="bar-val">${fmtBRLShort(recorrente)}</div></div>
+      <div class="bar-row"><div class="bar-label">Extraordinário</div><div class="bar-track"><div class="bar-fill" style="width:${extrao/tot*100}%;background:var(--yellow)"></div></div><div class="bar-val">${fmtBRLShort(extrao)}</div></div>
+      ${sem>0?`<div class="bar-row"><div class="bar-label text-muted">Não classificado</div><div class="bar-track"><div class="bar-fill" style="width:${sem/tot*100}%;background:var(--text3)"></div></div><div class="bar-val">${fmtBRLShort(sem)}</div></div>`:''}
+    </div>`;
+}
+
+function renderEvolucao(data){
+  const byMes={};
+  data.forEach(l=>{
+    const k=l.mes_ano;if(!k)return;
+    if(!byMes[k])byMes[k]={rec:0,desp:0,mes_ano:k};
+    if(l.tipo_mov==='receita')byMes[k].rec+=l.valor;
+    if(l.tipo_mov==='despesa')byMes[k].desp+=l.valor;
+  });
+  const meses=Object.values(byMes).sort((a,b)=>a.mes_ano.localeCompare(b.mes_ano));
+  if(!meses.length){document.getElementById('evolucaoMensal').innerHTML='<div class="text-muted text-sm" style="padding:.5rem">Sem dados</div>';return;}
+  const maxV=Math.max(...meses.map(m=>Math.max(m.rec,m.desp)))||1;
+  document.getElementById('evolucaoMensal').innerHTML=`
+    <div style="overflow-x:auto">
+    <div class="monthly-chart" style="min-width:${meses.length*60}px">
+      ${meses.map(m=>{
+        const rh=Math.max(4,m.rec/maxV*85);
+        const dh=Math.max(4,m.desp/maxV*85);
+        const [mo,yr]=m.mes_ano.split('/');
+        const lbl=new Date(yr,mo-1,1).toLocaleDateString('pt-BR',{month:'short'});
+        const res=m.rec-m.desp;
+        return `<div class="month-bar-wrap">
+          <div class="month-bars">
+            <div class="month-bar" style="height:${rh}px;background:var(--volt)" title="Receita: ${fmtBRL(m.rec)}"></div>
+            <div class="month-bar" style="height:${dh}px;background:var(--red)" title="Despesa: ${fmtBRL(m.desp)}"></div>
+          </div>
+          <div class="month-label">${lbl}<br><span style="color:${res>=0?'var(--volt)':'var(--red)'};">${fmtBRLShort(res)}</span></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="flex gap-2 mt-1" style="font-size:.7rem;color:var(--text3)">
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--volt);border-radius:2px;margin-right:3px"></span>Receita</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--red);border-radius:2px;margin-right:3px"></span>Despesa</span>
+    </div>
+    </div>`;
+}
+
+function renderDRE(data){
+  const byDRE={};
+  data.forEach(l=>{
+    if(l.tipo_mov==='transferencia')return;
+    const k=l.conta_dre||'Sem conta DRE';
+    if(!byDRE[k])byDRE[k]={rec:0,desp:0};
+    if(l.tipo_mov==='receita')byDRE[k].rec+=l.valor;
+    if(l.tipo_mov==='despesa')byDRE[k].desp+=l.valor;
+  });
+  const rows=Object.entries(byDRE).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(!rows.length){document.getElementById('dreResumo').innerHTML='<div class="text-muted text-sm" style="padding:.5rem">Sem dados</div>';return;}
+  document.getElementById('dreResumo').innerHTML=`
+    <div class="table-wrap">
+    <table><thead><tr><th>Conta DRE</th><th class="text-right">Receita</th><th class="text-right">Despesa</th><th class="text-right">Resultado</th></tr></thead>
+    <tbody>${rows.map(([k,v])=>{
+      const r=v.rec-v.desp;
+      return `<tr><td>${k}</td><td class="text-right text-volt">${v.rec>0?fmtBRL(v.rec):'—'}</td><td class="text-right text-red">${v.desp>0?fmtBRL(v.desp):'—'}</td><td class="text-right ${r>=0?'text-volt':'text-red'}">${fmtBRL(r)}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+function renderCaixaConta(data){
+  const rows=state.contas.filter(c=>c.ativo).map(c=>{
+    const si=parseBRNumber(c.saldo_inicial)||0;
+    const rec=data.filter(l=>l.tipo_mov==='receita'&&l.conta===c.id).reduce((s,l)=>s+l.valor,0);
+    const desp=data.filter(l=>l.tipo_mov==='despesa'&&l.conta===c.id).reduce((s,l)=>s+l.valor,0);
+    const tRec=data.filter(l=>l.tipo_mov==='transferencia'&&l.conta_destino===c.id).reduce((s,l)=>s+l.valor,0);
+    const tEnv=data.filter(l=>l.tipo_mov==='transferencia'&&l.conta_origem===c.id).reduce((s,l)=>s+l.valor,0);
+    const sf=si+rec-desp+tRec-tEnv;
+    return {nome:c.nome,si,rec,desp,tRec,tEnv,sf};
+  });
+  document.getElementById('caixaConta').innerHTML=`
+    <div class="table-wrap">
+    <table><thead><tr><th>Conta</th><th class="text-right">Saldo Inicial</th><th class="text-right">Entradas</th><th class="text-right">Saídas</th><th class="text-right">T. Recebidas</th><th class="text-right">T. Enviadas</th><th class="text-right">Saldo Final</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td>${r.nome}</td>
+      <td class="text-right">${fmtBRL(r.si)}</td>
+      <td class="text-right text-volt">${r.rec>0?fmtBRL(r.rec):'—'}</td>
+      <td class="text-right text-red">${r.desp>0?fmtBRL(r.desp):'—'}</td>
+      <td class="text-right text-blue">${r.tRec>0?fmtBRL(r.tRec):'—'}</td>
+      <td class="text-right text-yellow">${r.tEnv>0?fmtBRL(r.tEnv):'—'}</td>
+      <td class="text-right font-mono" style="font-weight:700;color:${r.sf>=0?'var(--volt)':'var(--red)'}">${fmtBRL(r.sf)}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderTransferencias(transf){
+  if(!transf.length){document.getElementById('transferenciasLista').innerHTML='<div class="text-muted text-sm" style="padding:.5rem">Nenhuma transferência registrada</div>';return;}
+  document.getElementById('transferenciasLista').innerHTML=`
+    <div class="table-wrap">
+    <table><thead><tr><th>Data</th><th>Descrição</th><th class="text-right">Valor</th><th>Conta Origem</th><th>Conta Destino</th></tr></thead>
+    <tbody>${transf.sort((a,b)=>new Date(b.data)-new Date(a.data)).map(l=>{
+      const orig=state.contas.find(c=>c.id===l.conta_origem)?.nome||l.conta_origem||'—';
+      const dest=state.contas.find(c=>c.id===l.conta_destino)?.nome||l.conta_destino||'—';
+      return `<tr><td>${fmtDate(l.data)}</td><td class="td-desc">${l.desc_original}</td><td class="text-right text-blue font-mono">${fmtBRL(l.valor)}</td><td>${orig}</td><td>${dest}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function openSettings(){
+  document.getElementById('settingsOverlay').classList.add('open');
+  renderContasSettings();
+  renderRegrasSettings();
+  renderFixosSettings();
+  renderMemoriaSettings();
+  renderPlanoSettings();
+}
+function closeSettings(){document.getElementById('settingsOverlay').classList.remove('open');}
+function closeSettingsOnOutside(e){if(e.target===document.getElementById('settingsOverlay'))closeSettings();}
+
+function switchSettingsTab(el,id){
+  document.querySelectorAll('.settings-panel .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.settings-panel .tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+// CONTAS
+function renderContasSettings(){
+  document.getElementById('contasList').innerHTML=state.contas.map((c,i)=>`
+    <div class="card mb-1" style="padding:.75rem">
+      <div class="flex items-center justify-between mb-1">
+        <span style="font-weight:600;font-size:.82rem">${c.nome}</span>
+        <div class="flex gap-1">
+          <label class="toggle"><input type="checkbox" ${c.ativo?'checked':''} onchange="toggleConta(${i},this.checked)"><span class="toggle-slider"></span></label>
+          <button class="btn btn-sm btn-danger btn-icon" onclick="removeConta(${i})">✕</button>
+        </div>
+      </div>
+      <div class="form-row form-row-2" style="gap:.5rem">
+        <div><label class="form-label">Nome</label><input class="form-control" value="${c.nome}" oninput="updateConta(${i},'nome',this.value)"></div>
+        <div><label class="form-label">Tipo</label><input class="form-control" value="${c.tipo}" oninput="updateConta(${i},'tipo',this.value)"></div>
+      </div>
+      <div class="form-row form-row-2" style="gap:.5rem;margin-top:.5rem">
+        <div><label class="form-label">Saldo Inicial (R$)</label><input class="form-control" type="number" value="${c.saldo_inicial}" oninput="updateConta(${i},'saldo_inicial',+this.value)"></div>
+        <div><label class="form-label">Data Início</label><input class="form-control" type="date" value="${c.data_inicio}" oninput="updateConta(${i},'data_inicio',this.value)"></div>
+      </div>
+    </div>`).join('');
+}
+
+function addConta(){
+  state.contas.push({id:genId(),nome:'Nova Conta',tipo:'Conta Corrente',saldo_inicial:0,data_inicio:'',ativo:true});
+  saveState();renderContasSettings();
+}
+function removeConta(i){state.contas.splice(i,1);saveState();renderContasSettings();}
+function toggleConta(i,v){state.contas[i].ativo=v;saveState();}
+function updateConta(i,f,v){state.contas[i][f]=v;saveState();}
+
+// REGRAS
+function renderRegrasSettings(){
+  document.getElementById('regrasList').innerHTML=state.regras.length?state.regras.map((r,i)=>`
+    <div class="card mb-1" style="padding:.75rem">
+      <div class="flex items-center justify-between mb-1">
+        <span style="font-size:.8rem;font-weight:600">${r.nome||'Regra '+i}</span>
+        <div class="flex gap-1">
+          <label class="toggle"><input type="checkbox" ${r.ativo?'checked':''} onchange="updateRegra(${i},'ativo',this.checked)"><span class="toggle-slider"></span></label>
+          <button class="btn btn-sm btn-danger btn-icon" onclick="removeRegra(${i})">✕</button>
+        </div>
+      </div>
+      <div class="form-row form-row-2" style="gap:.4rem">
+        <div><label class="form-label">Nome</label><input class="form-control" value="${r.nome||''}" oninput="updateRegra(${i},'nome',this.value)"></div>
+        <div><label class="form-label">Palavras-chave (vírgula)</label><input class="form-control" value="${r.palavras||''}" oninput="updateRegra(${i},'palavras',this.value)"></div>
+      </div>
+      <div class="form-row form-row-3" style="gap:.4rem;margin-top:.4rem">
+        <div><label class="form-label">Condição</label>
+          <select class="form-control" onchange="updateRegra(${i},'condicao',this.value)">
+            <option value="contem" ${r.condicao==='contem'?'selected':''}>Contém</option>
+            <option value="comeca" ${r.condicao==='comeca'?'selected':''}>Começa com</option>
+            <option value="termina" ${r.condicao==='termina'?'selected':''}>Termina com</option>
+          </select>
+        </div>
+        <div><label class="form-label">Tipo</label>
+          <select class="form-control" onchange="updateRegra(${i},'tipo',this.value)">
+            <option value="receita" ${r.tipo==='receita'?'selected':''}>Receita</option>
+            <option value="despesa" ${r.tipo==='despesa'?'selected':''}>Despesa</option>
+            <option value="transferencia" ${r.tipo==='transferencia'?'selected':''}>Transferência</option>
+          </select>
+        </div>
+        <div><label class="form-label">Linha de Negócio</label>
+          <select class="form-control" onchange="updateRegra(${i},'linha_neg',this.value)">
+            <option value="">--</option>
+            ${LINHAS_NEGOCIO.map(ln=>`<option value="${ln}" ${r.linha_neg===ln?'selected':''}>${ln}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-row form-row-2" style="gap:.4rem;margin-top:.4rem">
+        <div><label class="form-label">Categoria</label>
+          <select class="form-control" onchange="updateRegraCategoria(${i},this.value)">
+            ${buildCatOptions(r.categoria)}
+          </select>
+        </div>
+        <div><label class="form-label">Recorrente</label>
+          <select class="form-control" onchange="updateRegra(${i},'recorrente',this.value)">
+            <option value="">--</option>
+            <option value="recorrente" ${r.recorrente==='recorrente'?'selected':''}>Recorrente</option>
+            <option value="extraordinario" ${r.recorrente==='extraordinario'?'selected':''}>Extraordinário</option>
+          </select>
+        </div>
+      </div>
+    </div>`).join(''):'<div class="text-muted text-sm">Nenhuma regra cadastrada</div>';
+}
+
+function addRegra(){state.regras.push({nome:'',palavras:'',condicao:'contem',tipo:'despesa',categoria:'',linha_neg:'',recorrente:'',ativo:true});saveState();renderRegrasSettings();}
+function removeRegra(i){state.regras.splice(i,1);saveState();renderRegrasSettings();}
+function updateRegra(i,f,v){state.regras[i][f]=v;saveState();}
+function updateRegraCategoria(i,cat){state.regras[i].categoria=cat;state.regras[i].conta_dre=getContaDRE(cat);state.regras[i].tipo_gasto=getTipoGasto(cat);saveState();}
+
+// FIXOS
+function renderFixosSettings(){
+  document.getElementById('fixosList').innerHTML=state.fixos.length?state.fixos.map((r,i)=>`
+    <div class="card mb-1" style="padding:.75rem">
+      <div class="flex items-center justify-between mb-1">
+        <span style="font-size:.8rem;font-weight:600">${r.nome||'Fixo '+i}</span>
+        <div class="flex gap-1">
+          <label class="toggle"><input type="checkbox" ${r.ativo?'checked':''} onchange="updateFixo(${i},'ativo',this.checked)"><span class="toggle-slider"></span></label>
+          <button class="btn btn-sm btn-danger btn-icon" onclick="removeFixo(${i})">✕</button>
+        </div>
+      </div>
+      <div class="form-row form-row-2" style="gap:.4rem">
+        <div><label class="form-label">Nome</label><input class="form-control" value="${r.nome||''}" oninput="updateFixo(${i},'nome',this.value)"></div>
+        <div><label class="form-label">Palavra-chave</label><input class="form-control" value="${r.palavras||''}" oninput="updateFixo(${i},'palavras',this.value)"></div>
+      </div>
+      <div class="form-row form-row-3" style="gap:.4rem;margin-top:.4rem">
+        <div><label class="form-label">Valor Esperado</label><input class="form-control" type="number" value="${r.valor_esperado||''}" oninput="updateFixo(${i},'valor_esperado',+this.value)"></div>
+        <div><label class="form-label">Tipo</label>
+          <select class="form-control" onchange="updateFixo(${i},'tipo',this.value)">
+            <option value="despesa" ${r.tipo==='despesa'?'selected':''}>Despesa</option>
+            <option value="receita" ${r.tipo==='receita'?'selected':''}>Receita</option>
+            <option value="transferencia" ${r.tipo==='transferencia'?'selected':''}>Transferência</option>
+          </select>
+        </div>
+        <div><label class="form-label">Categoria</label>
+          <select class="form-control" onchange="updateFixoCategoria(${i},this.value)">
+            ${buildCatOptions(r.categoria)}
+          </select>
+        </div>
+      </div>
+    </div>`).join(''):'<div class="text-muted text-sm">Nenhum lançamento fixo cadastrado</div>';
+}
+function addFixo(){state.fixos.push({nome:'',palavras:'',tipo:'despesa',categoria:'',linha_neg:'',recorrente:'recorrente',ativo:true,condicao:'contem'});saveState();renderFixosSettings();}
+function removeFixo(i){state.fixos.splice(i,1);saveState();renderFixosSettings();}
+function updateFixo(i,f,v){state.fixos[i][f]=v;saveState();}
+function updateFixoCategoria(i,cat){state.fixos[i].categoria=cat;state.fixos[i].conta_dre=getContaDRE(cat);saveState();}
+
+// MEMÓRIA
+function renderMemoriaSettings(){
+  const entries=Object.entries(state.memoria);
+  document.getElementById('memoriaCount').textContent=`${entries.length} entradas`;
+  document.getElementById('memoriaList').innerHTML=entries.slice(0,100).map(([k,v])=>`
+    <div style="border-bottom:1px solid var(--border);padding:.5rem 0;display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.72rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k}</div>
+        <div style="font-size:.7rem;color:var(--text3);margin-top:.15rem">${v.categoria||'—'} · ${v.usos||0} usos</div>
+      </div>
+      <button class="btn btn-sm btn-danger btn-icon" onclick="deleteMemoria('${k.replace(/'/g,"\\'")}')">✕</button>
+    </div>`).join('')||'<div class="text-muted text-sm">Memória vazia</div>';
+}
+function deleteMemoria(k){delete state.memoria[k];saveState();renderMemoriaSettings();}
+function clearMemoria(){if(confirm('Limpar toda a memória aprendida?')){state.memoria={};saveState();renderMemoriaSettings();}}
+
+// PLANO
+function renderPlanoSettings(){
+  const busca=(document.getElementById('planoBusca')?.value||'').toLowerCase();
+  const all=[...planoAtivos.map(p=>({...p,_active:true})),...planoInativos.map(p=>({...p,_active:false}))];
+  const filtered=busca?all.filter(p=>p.categoria.toLowerCase().includes(busca)):all;
+  document.getElementById('planoList').innerHTML=filtered.slice(0,200).map(p=>`
+    <div style="border-bottom:1px solid var(--border);padding:.4rem 0;display:flex;align-items:center;gap:.5rem">
+      <span class="dot ${p._active?'dot-green':'dot-gray'}"></span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.73rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.categoria}</div>
+        <div style="font-size:.68rem;color:var(--text3)">${p.conta_dre||'—'} ${p.tipo?'· '+p.tipo:''}</div>
+      </div>
+      <span class="badge ${p._active?'badge-green':'badge-gray'}" style="flex-shrink:0">${p._active?'Ativo':'Inativo'}</span>
+    </div>`).join('');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goPage(n){
+  document.querySelectorAll('.page').forEach((p,i)=>{p.classList.toggle('active',i+1===n);});
+  document.querySelectorAll('.step').forEach((s,i)=>{
+    s.classList.toggle('active',i+1===n);
+    s.classList.toggle('done',i+1<n);
+  });
+  if(n===2){populateFiltroMes();renderClassifTable();}
+  if(n===3){updatePeriodSelector();renderDashboard();}
+}
+
+function updateStepDone(){
+  if(state.lancamentos.length>0){
+    document.getElementById('step1').classList.add('done');
+  }
+}
+
+function switchTab(el, id){
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const tabs=el.closest('.tabs').nextElementSibling;
+  // find all sibling tab-contents
+  let sibling=tabs;
+  while(sibling){
+    if(sibling.classList&&sibling.classList.contains('tab-content')){sibling.classList.remove('active');}
+    sibling=sibling.nextElementSibling;
+  }
+  document.getElementById(id).classList.add('active');
+}
+
+// ============================================================
+// BACKUP
+// ============================================================
+function exportBackup(){
+  const data=JSON.stringify({state,exported:new Date().toISOString(),version:'2.0'},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`ezvolt_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importBackup(evt){
+  const file=evt.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const bk=JSON.parse(e.target.result);
+      if(bk.state){
+        Object.assign(state,bk.state);
+        saveState();
+        showToast('Backup restaurado com sucesso!','success');
+        updateStepDone();
+        populateFiltroMes();
+      }
+    }catch(err){showToast('Erro ao importar backup: '+err.message,'error');}
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData(){
+  if(!confirm('Limpar TODOS os dados? Isso não pode ser desfeito.'))return;
+  state.lancamentos=[];state.memoria={};
+  saveState();
+  showToast('Dados limpos.','success');
+  document.getElementById('importSummaryArea').classList.add('hidden');
+}
+
+// ============================================================
+// EXPORT PDF
+// ============================================================
+function exportPDF(){window.print();}
+
+// ============================================================
+// EXPORT XLSX
+// ============================================================
+function exportXLSX(){
+  const wb=XLSX.utils.book_new();
+  
+  // Helper
+  function addSheet(name, headers, rows){
+    const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+    // Auto col widths
+    const wscols=headers.map(h=>({wch:Math.max(h.length+2,12)}));
+    ws['!cols']=wscols;
+    XLSX.utils.book_append_sheet(wb,ws,name);
+  }
+  
+  const all=state.lancamentos;
+  const rec=all.filter(l=>l.tipo_mov==='receita');
+  const desp=all.filter(l=>l.tipo_mov==='despesa');
+  const transf=all.filter(l=>l.tipo_mov==='transferencia');
+  
+  // 1. Guia
+  addSheet('Guia',['Campo','Descrição'],[
+    ['FLUXO MENSAL',''],
+    ['Passo 1 - Importar','Importe o XLSX do Bradesco exportado do Omie ou CSV padrão Bradesco'],
+    ['Passo 2 - Classificar','Revise e classifique os lançamentos pendentes. O sistema sugerirá automaticamente com base em regras e memória.'],
+    ['Passo 3 - Dashboard','Visualize KPIs, gráficos e análises por período.'],
+    ['',''],
+    ['SOBRE AS ABAS',''],
+    ['Receitas','Lançamentos classificados como receita'],
+    ['Despesas','Lançamentos classificados como despesa'],
+    ['Transferências','Movimentações entre contas (não entram no resultado)'],
+    ['Classificação Geral','Todos os lançamentos consolidados - base para auditoria'],
+    ['Lançamentos Importados','Dados brutos do extrato bancário'],
+    ['Plano de Contas','Categorias oficiais da EZVOLT'],
+    ['Regras Autopreenchimento','Regras por palavra-chave para classificação automática'],
+    ['Lançamentos Recorrentes','Lançamentos fixos mensais'],
+    ['Memória Aprendida','Classificações aprendidas pelo sistema'],
+    ['Dashboard Base','Tabelas consolidadas para análise'],
+  ]);
+  
+  // 2. Dicionário
+  addSheet('Dicionário de Campos',['Campo','Descrição','Preenchimento','Obrigatório','Exemplo'],[
+    ['Data','Data do lançamento','Automático','Sim','02/06/2026'],
+    ['Ano','Ano extraído da data','Automático','Sim','2026'],
+    ['Mês','Mês numérico','Automático','Sim','6'],
+    ['Conta','Conta bancária','Automático','Sim','Banco Bradesco'],
+    ['Descrição Original','Texto original do extrato','Automático','Sim','CIELO ANTECIPACAO...'],
+    ['Descrição Normalizada','Versão normalizada para matching','Automático','Sim','CIELO ANTECIPACAO'],
+    ['Valor','Valor absoluto em R$','Automático','Sim','1234.56'],
+    ['Tipo de Movimento','receita / despesa / transferencia','Manual/Auto','Sim','receita'],
+    ['Categoria','Categoria do plano de contas','Manual/Auto','Sim','0.4 RECARGA VEÍCULOS - B2C'],
+    ['Conta do DRE','Agrupamento DRE','Automático','Sim','Receita Bruta de Vendas'],
+    ['Tipo de Gasto/Receita','Natureza da operação','Automático','Não','Serviço Tomado'],
+    ['Linha de Negócio','Linha de negócio da EZVOLT','Manual','Não','Recarga B2C'],
+    ['Recorrente/Extraordinário','Natureza da recorrência','Manual','Não','recorrente'],
+    ['Transferência','Se é transferência entre contas','Manual','Não','Sim'],
+    ['Conta Origem','Conta de saída','Manual','Transf.','Banco Bradesco'],
+    ['Conta Destino','Conta de entrada','Manual','Transf.','XP Investimentos'],
+    ['Status','Situação da classificação','Automático','Sim','classificado'],
+    ['Fonte da Classificação','Como foi classificado','Automático','Não','memoria'],
+    ['Observação','Notas livres','Manual','Não','Pagamento referente a...'],
+  ]);
+  
+  // 3. Receitas
+  addSheet('Receitas',
+    ['Data','Ano','Mês','Conta','Descrição','Valor','Categoria','Conta do DRE','Tipo de Receita','Linha de Negócio','Recorrente/Extrao.','Fonte','Observação'],
+    rec.map(l=>[fmtDate(l.data),l.ano,l.mes,l.conta,l.desc_original,l.valor,l.categoria,l.conta_dre,l.tipo_gasto,l.linha_neg,l.recorrente,l.fonte,l.observacao])
+  );
+  
+  // 4. Despesas
+  addSheet('Despesas',
+    ['Data','Ano','Mês','Conta','Descrição','Valor','Categoria','Conta do DRE','Tipo de Gasto','Linha de Negócio','Recorrente/Extrao.','Fonte','Observação'],
+    desp.map(l=>[fmtDate(l.data),l.ano,l.mes,l.conta,l.desc_original,l.valor,l.categoria,l.conta_dre,l.tipo_gasto,l.linha_neg,l.recorrente,l.fonte,l.observacao])
+  );
+  
+  // 5. Transferências
+  addSheet('Transferências',
+    ['Data','Ano','Mês','Descrição','Valor','Conta Origem','Conta Destino','Observação'],
+    transf.map(l=>{
+      const orig=state.contas.find(c=>c.id===l.conta_origem)?.nome||l.conta_origem||'';
+      const dest=state.contas.find(c=>c.id===l.conta_destino)?.nome||l.conta_destino||'';
+      return [fmtDate(l.data),l.ano,l.mes,l.desc_original,l.valor,orig,dest,l.observacao];
+    })
+  );
+  
+  // 6. Lançamentos Importados
+  addSheet('Lançamentos Importados',
+    ['Data','Lançamento Original','Crédito','Débito','Valor Normalizado','Status','Observação'],
+    all.map(l=>[fmtDate(l.data),l.desc_original,l.cred_raw||'',l.deb_raw||'',l.valor,l.status,l.observacao])
+  );
+  
+  // 7. Classificação Geral
+  addSheet('Classificação Geral',
+    ['ID','Data','Ano','Mês','Conta','Desc. Original','Desc. Normalizada','Valor','Tipo','Categoria','Conta DRE','Tipo Gasto/Rec.','Linha Negócio','Recorrente','Transf.','Conta Origem','Conta Destino','Status','Fonte','Obs.'],
+    all.map(l=>{
+      const orig=state.contas.find(c=>c.id===l.conta_origem)?.nome||l.conta_origem||'';
+      const dest=state.contas.find(c=>c.id===l.conta_destino)?.nome||l.conta_destino||'';
+      return [l.id,fmtDate(l.data),l.ano,l.mes,l.conta,l.desc_original,l.desc_norm,l.valor,l.tipo_mov,l.categoria,l.conta_dre,l.tipo_gasto,l.linha_neg,l.recorrente,l.is_transferencia?'Sim':'Não',orig,dest,l.status,l.fonte,l.observacao];
+    })
+  );
+  
+  // 8. Plano de Contas
+  addSheet('Plano de Contas',
+    ['Situação','Categoria','Conta do DRE','Tipo de Gasto/Receita'],
+    PLANO_CONTAS.map(p=>[p.situacao,p.categoria,p.conta_dre,p.tipo])
+  );
+  
+  // 9. Regras Autopreenchimento
+  addSheet('Regras Autopreenchimento',
+    ['Regra','Palavras-chave','Condição','Categoria','Conta DRE','Tipo','Linha Negócio','Recorrente','Tipo Movimento','Ativa'],
+    state.regras.map(r=>[r.nome,r.palavras,r.condicao,r.categoria,r.conta_dre||'',r.tipo_gasto||'',r.linha_neg,r.recorrente,r.tipo,r.ativo?'Sim':'Não'])
+  );
+  
+  // 10. Lançamentos Recorrentes
+  addSheet('Lançamentos Recorrentes',
+    ['Nome','Palavra-chave','Valor Esperado','Categoria','Conta DRE','Linha Negócio','Tipo','Ativo'],
+    state.fixos.map(r=>[r.nome,r.palavras,r.valor_esperado||'',r.categoria,r.conta_dre||'',r.linha_neg,r.tipo,r.ativo?'Sim':'Não'])
+  );
+  
+  // 11. Memória Aprendida
+  addSheet('Memória Aprendida',
+    ['Descrição Normalizada','Categoria','Conta DRE','Tipo','Linha Negócio','Recorrente','Transf.','Conta Destino','Última Utilização','Usos'],
+    Object.entries(state.memoria).map(([k,v])=>[k,v.categoria,v.conta_dre,v.tipo_gasto,v.linha_neg,v.recorrente,v.is_transferencia?'Sim':'Não',v.conta_destino||'',v.ultima_uso?new Date(v.ultima_uso).toLocaleDateString('pt-BR'):'',v.usos||0])
+  );
+  
+  // 12. Dashboard Base
+  const byMes={};
+  all.forEach(l=>{
+    const k=l.mes_ano;if(!k)return;
+    if(!byMes[k])byMes[k]={mes_ano:k,receita:0,despesa:0,resultado:0};
+    if(l.tipo_mov==='receita')byMes[k].receita+=l.valor;
+    if(l.tipo_mov==='despesa')byMes[k].despesa+=l.valor;
+  });
+  Object.values(byMes).forEach(m=>m.resultado=m.receita-m.despesa);
+  addSheet('Dashboard Base',
+    ['Mês/Ano','Receita','Despesa','Resultado'],
+    Object.values(byMes).sort((a,b)=>a.mes_ano.localeCompare(b.mes_ano)).map(m=>[m.mes_ano,m.receita,m.despesa,m.resultado])
+  );
+  
+  XLSX.writeFile(wb,`EZVOLT_Financeiro_${new Date().toISOString().slice(0,10)}.xlsx`);
+  showToast('Planilha exportada!','success');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type='success'){
+  const t=document.createElement('div');
+  t.className=`alert alert-${type} no-print`;
+  t.style.cssText='position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;max-width:320px;animation:fadeIn .2s';
+  t.innerHTML=`<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span><span>${msg}</span>`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+// MODAL helpers
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+
+// ============================================================
+// INIT
+// ============================================================
+function init(){
+  updateStepDone();
+  updatePeriodSelector();
+  
+  // Default rules from EZVOLT patterns
+  if(!state.regras.length){
+    state.regras=[
+      {nome:'Cielo - Receita B2C',palavras:'CIELO',condicao:'contem',tipo:'receita',categoria:'0.4 RECARGA VEÍCULOS - B2C',linha_neg:'Recarga B2C',recorrente:'recorrente',conta_dre:'Receita Bruta de Vendas',ativo:true},
+      {nome:'Stripe - Receita B2C',palavras:'STRIPE',condicao:'contem',tipo:'receita',categoria:'0.4 RECARGA VEÍCULOS - B2C',linha_neg:'Recarga B2C',recorrente:'recorrente',conta_dre:'Receita Bruta de Vendas',ativo:true},
+      {nome:'Venda Cartão',palavras:'VENDA CARTAO',condicao:'contem',tipo:'receita',categoria:'0.4 RECARGA VEÍCULOS - B2C',linha_neg:'Recarga B2C',recorrente:'recorrente',ativo:true},
+      {nome:'Tarifa Bancária',palavras:'TARIFA',condicao:'contem',tipo:'despesa',categoria:'2100.0 (4971) TARIFA BANCARIA',linha_neg:'Geral/Overhead',recorrente:'recorrente',conta_dre:'Despesas Financeiras',ativo:true},
+      {nome:'Conta de Luz',palavras:'CONTA DE LUZ,ENEL,CPFL,LIGHT',condicao:'contem',tipo:'despesa',categoria:'1800.3 (5098) ENERGIA ELÉTRICA',linha_neg:'Geral/Overhead',recorrente:'recorrente',conta_dre:'Despesas Administrativas',ativo:true},
+      {nome:'Água e Esgoto',palavras:'CONTA DE AGUA,AGUAS DO RIO,SABESP,BRK,IGUA',condicao:'contem',tipo:'despesa',categoria:'1800.2 (5097) ÁGUA E ESGOTO',linha_neg:'Geral/Overhead',recorrente:'recorrente',conta_dre:'Despesas Administrativas',ativo:true},
+      {nome:'Telefone/Internet',palavras:'CONTA DE TELEFONE,STARLINK,TIM,CLARO,SONAVOIP',condicao:'contem',tipo:'despesa',categoria:'1800.4 (5099) TELEFONIA E INTERNET',linha_neg:'Geral/Overhead',recorrente:'recorrente',conta_dre:'Despesas Administrativas',ativo:true},
+      {nome:'Folha/Salário',palavras:'FOLHA,SALARIO,FOLHA DE PAGAMENTO',condicao:'contem',tipo:'despesa',categoria:'1000.0 (1634) SALÁRIOS E ORDENADOS',linha_neg:'Geral/Overhead',recorrente:'recorrente',conta_dre:'Despesas com Pessoal',ativo:true},
+      {nome:'Pró-labore',palavras:'PRO LABORE,PRÓ-LABORE,PROLABORE',condicao:'contem',tipo:'despesa',categoria:'1000.1 (1635) PRÓ-LABORE',linha_neg:'Geral/Overhead',recorrente:'recorrente',conta_dre:'Despesas com Pessoal',ativo:true},
+      {nome:'IOF',palavras:'IOF',condicao:'contem',tipo:'despesa',categoria:'2100.1 (4982) IOF',linha_neg:'Geral/Overhead',recorrente:'extraordinario',conta_dre:'Despesas Financeiras',ativo:true},
+      {nome:'Rendimento Aplicação',palavras:'RENDIMENTO,RESGATE',condicao:'contem',tipo:'receita',categoria:'200.0 RENDIMENTO SOBRE APLICAÇÕES',linha_neg:'Geral/Overhead',recorrente:'recorrente',conta_dre:'Receitas Financeiras',ativo:true},
+      {nome:'Transferência Interna EzVolt',palavras:'EASY VOLT,EZVOLT,EZCHARGE',condicao:'contem',tipo:'transferencia',categoria:'',linha_neg:'',recorrente:'',ativo:true},
+    ];
+    saveState();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
